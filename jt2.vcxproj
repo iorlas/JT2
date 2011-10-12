@@ -54,7 +54,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>D:\apps\boost_1_47_0;C:\Users\Redheady\Documents\Visual Studio 2010\Projects\jt2;C:\Program Files\Microsoft DirectX SDK %28June 2010%29\Include;D:\apps\detour\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\apps\boost_1_47_0;D:\apps\d3d9proxy;C:\Program Files\Microsoft DirectX SDK %28June 2010%29\Include;D:\apps\detour\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
