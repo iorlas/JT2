@@ -15,11 +15,13 @@
     <ClInclude Include="defines.h" />
     <ClInclude Include="DX9Manager.h" />
     <ClInclude Include="log.h" />
+    <ClInclude Include="ObjectTimer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="DX9Manager.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ObjectTimer.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{392E2E9C-3084-4363-924B-65BFB60A3E9E}</ProjectGuid>

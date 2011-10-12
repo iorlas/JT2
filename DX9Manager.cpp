@@ -21,6 +21,7 @@ DX9Manager::~DX9Manager(void){
 	typedef UINT (WINAPI* D3D9DeviceFuncUnHookFunc)(UINT funcId);
 	D3D9DeviceFuncUnHookFunc D3D9DeviceFuncUnHook = (D3D9DeviceFuncUnHookFunc)GetProcAddress(GetModuleHandle(L"d3d9.dll"), "D3D9DeviceFuncUnHook");
 	if(!D3D9DeviceFuncUnHook){
+		LOG_ERR(L"! DX9 manager: cannot find D3D9DeviceFuncUnHook function in the d3d9.dll! Maybe broken D3D9 Proxy?");
 		MessageBox(NULL, L"JT2 Lib Error", L"Cannot load special functions. You need to use special d3d9.dll proxy library!", MB_OK | MB_ICONERROR);
 		return;
 	}
@@ -59,6 +60,7 @@ void DX9Manager::MainHookDX9(void){
 	typedef UINT (WINAPI* D3D9DeviceFuncHookFunc)(UINT funcId, void* funcRef);
 	D3D9DeviceFuncHookFunc D3D9DeviceFuncHook = (D3D9DeviceFuncHookFunc)GetProcAddress(GetModuleHandle(L"d3d9.dll"), "D3D9DeviceFuncHook");
 	if(!D3D9DeviceFuncHook){
+		LOG_ERR(L"! DX9 manager: cannot find D3D9DeviceFuncHook function in the d3d9.dll! Maybe broken D3D9 Proxy?");
 		MessageBox(NULL, L"JT2 Lib Error", L"Cannot load special functions. You need to use special d3d9.dll proxy library!", MB_OK | MB_ICONERROR);
 		return;
 	}
