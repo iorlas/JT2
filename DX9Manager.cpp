@@ -6,7 +6,7 @@ DX9Manager* DX9Manager::singleton = NULL;
 
 //Original funcs to call after hook
 DX9Manager::DX9Manager(void):
-	isInitiated(false), isFirstFrame(false),
+	isInitiated(false), isFirstFrame(false), isFirstInitiatedFrame(false),
 	consoleFont(0){
 	if(singleton)
 		LOG_VERBOSE(L"DX9 manager: dude... you are idiot, we cant create more singletons >:(");
@@ -27,8 +27,9 @@ DX9Manager::~DX9Manager(void){
 	}
 	D3D9DeviceFuncUnHook(ENDSCENE);
 
-	//Release resources
-	singleton->consoleFont->Release();
+	//Release temp resources
+	//BUG: If application closes, we cant release any resource. Perhaps, because of loop, it never runs after end of app.
+	//singleton->consoleFont->Release();
 
 	LOG_VERBOSE(L"* DX9 manager closed");
 }
@@ -36,17 +37,23 @@ DX9Manager::~DX9Manager(void){
 void DX9Manager::HookEndScene(LPDIRECT3DDEVICE9 pDevice){
 	//At first frame, we need to init every dx thing
 	if(!singleton->isFirstFrame){
+		singleton->d3d9Device = pDevice;
 		D3DXCreateFont(pDevice, 15, 0, FW_BOLD, 1, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Verdana", &singleton->consoleFont);
-		singleton->OnDXFirstFrame(pDevice);
 		singleton->isFirstFrame = true;
 	}
 	
 	//For the loading time
 	if(!singleton->isInitiated)
 		singleton->consoleFont->DrawText(NULL, L"JT2 init...", -1, &singleton->consoleRect, DT_CENTER|DT_NOCLIP, 0xFFFFFFFF);
-
-	//Touch event...
-	singleton->OnDXEndScene(pDevice);	
+	else{
+		//First frame after initiation of the real application is complete
+		if(!singleton->isFirstInitiatedFrame){
+			singleton->OnDXFirstFrame(pDevice);
+			singleton->isFirstInitiatedFrame = true;
+		}
+		//Touch event...
+		singleton->OnDXEndScene(pDevice);
+	}
 }
 
 void DX9Manager::MainHookDX9(void){

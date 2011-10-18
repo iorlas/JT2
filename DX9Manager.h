@@ -18,6 +18,7 @@ public:
 	//Temporary indicators for the EndScene
 	bool isInitiated;
 	bool isFirstFrame;
+	bool isFirstInitiatedFrame;
 
 	static DX9Manager* singleton;
 private:
@@ -34,6 +35,8 @@ private:
 	//For the "loading..." label
 	LPD3DXFONT consoleFont;
 	RECT consoleRect;
+
+	LPDIRECT3DDEVICE9 d3d9Device;
 };
 
 }

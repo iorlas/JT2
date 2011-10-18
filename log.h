@@ -42,7 +42,7 @@ public:
 			fp = fopen(pfileName, "a+");
 			if(fp != NULL) fseek(fp, 0, SEEK_END);
 		}
-		mutex = CreateMutex(NULL, FALSE, L"JTLogFileMutex");
+		mutex = CreateMutex(NULL, FALSE, L"LogFileMutex");
 	}
 
 	void close() {

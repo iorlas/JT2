@@ -33,6 +33,7 @@ using namespace std;
 #include <boost/timer.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include "D3D9Proxy/common.h"
 

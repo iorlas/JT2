@@ -3,22 +3,54 @@
 #include "defines.h"
 
 #define OBJECT_TIMER_PATTERN_SIZE 4
+#define TIMER_LABEL_ALIVE L"ALIVE!"
 
 namespace JungleTime{
 
-class ObjectTimer :
-	public boost::timer
+class ObjectTimer
 {
 public:
-	ObjectTimer(string innerName, string labelName, double cooldown);
+	ObjectTimer(wstring innerName, double cooldown, boost::property_tree::ptree config);
 	virtual ~ObjectTimer(void);
 
-	string innerName;
-	string labelName;
+	void Render(PDIRECT3DDEVICE9 pDevice);
+	void PrepareRender(PDIRECT3DDEVICE9 pDevice);
+
+	void Start();
+	void Stop();
+
+	bool isAlive;
+
+	boost::timer mainTimer;
+	wstring innerName;
+	wstring labelName;
 	double cooldown;
+	double redLine;
 	COLORREF patternLight[OBJECT_TIMER_PATTERN_SIZE*OBJECT_TIMER_PATTERN_SIZE];
 	COLORREF patternShadow[OBJECT_TIMER_PATTERN_SIZE*OBJECT_TIMER_PATTERN_SIZE];
 	COLORREF patternAvail[OBJECT_TIMER_PATTERN_SIZE*OBJECT_TIMER_PATTERN_SIZE];
+	int coords[2];
+
+	//overlay settings
+	bool showLabel;
+	RECT labelCoords;
+	
+	RECT timerCoords;
+	int timerFontSize;
+	int timerFontWeight;
+	wstring timerFontName;
+	DWORD timerFontColor;
+	DWORD timerFontRedlineColor;
+	DWORD timerFontAliveColor;
+
+	bool showAnnounce;
+	RECT announceCoords;
+	int announceFontSize;
+	int announceFontWeight;
+	wstring announceFontName;
+	DWORD announceFontColor;
+
+	LPD3DXFONT timerFont;
 };
 
 }
