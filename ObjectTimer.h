@@ -19,8 +19,11 @@ public:
 	void Start();
 	void Stop();
 
+	void CheckPixels(HDC windowDC);
+
 	bool isAlive;
 
+	boost::mutex timerMutex;
 	boost::timer mainTimer;
 	wstring innerName;
 	wstring labelName;

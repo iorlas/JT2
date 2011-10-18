@@ -1,5 +1,16 @@
 #include "ObjectTimer.h"
 
+bool CheckPixelMatrix(HDC windowDC, int *coords, COLORREF *patterns){
+	COLORREF cur;
+	for (int i = 0; i < OBJECT_TIMER_PATTERN_SIZE*OBJECT_TIMER_PATTERN_SIZE; i++){
+		cur = GetPixel(windowDC, coords[0]+(i%OBJECT_TIMER_PATTERN_SIZE), coords[1]+(i/OBJECT_TIMER_PATTERN_SIZE));
+		if(cur != patterns[i]){
+			return false;
+		}
+	}
+	return true;
+}
+
 
 bool ParsePatternLine(string line, COLORREF *patternOut){
 	using namespace boost;
@@ -107,7 +118,7 @@ void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice){
 		//0xFFB5E61D
 		timerFont->DrawText(NULL, TIMER_LABEL_ALIVE, -1, &timerCoords, DT_NOCLIP, timerFontAliveColor);
 	else{
-
+		boost::mutex::scoped_lock l(timerMutex);
 		double timeLeft = cooldown - mainTimer.elapsed();
 		
 		//I don't want to show you a negative numbers
@@ -127,21 +138,35 @@ void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice){
 	}
 }
 
+void ObjectTimer::CheckPixels(HDC windowDC){
+	if(!isAlive && CheckPixelMatrix(windowDC, coords, patternAvail))
+			Stop();
+	else if(isAlive && CheckPixelMatrix(windowDC, coords, patternShadow))
+			Start();
+	else if(isAlive && CheckPixelMatrix(windowDC, coords, patternLight))
+			Start();
+}
+
 void ObjectTimer::PrepareRender(PDIRECT3DDEVICE9 pDevice){
 	D3DXCreateFont(pDevice, timerFontSize, 0, timerFontWeight, 1, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, timerFontName.c_str(), &timerFont);
 	Start();
 }
 
 void ObjectTimer::Start(){
+	boost::mutex::scoped_lock l(timerMutex);
 	isAlive = false;
 	mainTimer.restart();
+	LOG_VERBOSE((L"Object Timers: " + innerName + L" - START").c_str());
 }
 
 void ObjectTimer::Stop(){
 	isAlive = true;
+	LOG_VERBOSE((L"Object Timers: " + innerName + L" - STOP").c_str());
 }
 
 ObjectTimer::~ObjectTimer(void){
+	//TODO: Release temp resources
+	//BUG: If application closes, we cant release any resource. Perhaps, because of loop, it never runs after end of app.
 	//timerFont->Release();
 }
 

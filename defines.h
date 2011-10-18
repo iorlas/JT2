@@ -40,3 +40,6 @@ using namespace std;
 #include "log.h"
 
 LOG_USE;
+
+//We can change with new patches...
+#define LOL_WINDOW_NAME L"League of Legends (TM) Client"

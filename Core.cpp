@@ -5,7 +5,7 @@ namespace JungleTime{
 
 Core* Core::singleton;
 
-Core::Core(void) : DX9Manager(){
+Core::Core(void) : DX9Manager(), isEnabled(true){
 	LOG_VERBOSE(L"* Core created");
 }
 
@@ -24,6 +24,7 @@ void Core::OnDXInitiated(void){
 	boost::property_tree::ini_parser::read_ini("jt2_resconf_cur.ini", resConfig);
 
 	//Loading all the timers
+	LOG_VERBOSE(L"Core: Timers: Initiate...");
 	TIMER_NEW(L"baron", 420);
 	TIMER_NEW(L"dragon", 360);
 
@@ -38,8 +39,28 @@ void Core::OnDXInitiated(void){
 	TIMER_NEW(L"bot_wraiths", 100);
 	TIMER_NEW(L"bot_golems", 100);
 	TIMER_NEW(L"bot_wolves", 100);
-
 	isInitiated = true;
+	LOG_VERBOSE(L"Core: Timers: done");
+
+	//Now Jungle Timer starts rendering timers and labels, we can start pixel-matching
+	HDC hdc = 0;
+	HWND hwnd = 0;
+	//Wait for the LoL window
+	LOG_VERBOSE(L"Core: Waiting for the window");
+	while(!(hwnd = FindWindow(NULL, LOL_WINDOW_NAME)))
+		Sleep(50);
+
+	LOG_VERBOSE(L"Core: Window found!");
+	hdc = GetDC(hwnd);
+
+	//Go-go, pawa rangers!
+	LOG_VERBOSE(L"Core: Loop started");
+	while(isEnabled){
+		for (vector<boost::shared_ptr<ObjectTimer>>::iterator it = timers.begin(); it != timers.end(); it++)
+			(*it)->CheckPixels(hdc);
+		Sleep(1000);
+	}
+
 }
 void Core::OnDXEndScene(LPDIRECT3DDEVICE9 pDevice){
 	for (vector<boost::shared_ptr<ObjectTimer>>::iterator it = timers.begin(); it != timers.end(); it++)

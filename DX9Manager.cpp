@@ -27,7 +27,7 @@ DX9Manager::~DX9Manager(void){
 	}
 	D3D9DeviceFuncUnHook(ENDSCENE);
 
-	//Release temp resources
+	//TODO: Release temp resources
 	//BUG: If application closes, we cant release any resource. Perhaps, because of loop, it never runs after end of app.
 	//singleton->consoleFont->Release();
 

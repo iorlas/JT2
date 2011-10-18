@@ -23,6 +23,9 @@ private:
 
 	boost::property_tree::ptree userConfig;
 	boost::property_tree::ptree resConfig;
+
+	//We need this flag for the pixel-matching loop
+	bool isEnabled;
 };
 
 }
