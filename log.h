@@ -65,7 +65,6 @@ public:
 		}
 		ReleaseMutex(mutex);
 	}
-	
 };
 
 #endif

@@ -11,7 +11,6 @@ bool CheckPixelMatrix(HDC windowDC, int *coords, COLORREF *patterns){
 	return true;
 }
 
-
 bool ParsePatternLine(string line, COLORREF *patternOut){
 	using namespace boost;
 
@@ -36,40 +35,14 @@ wstring StringToWString(const string& s){
 
 namespace JungleTime{
 
-ObjectTimer::ObjectTimer(wstring innerName, double cooldown, boost::property_tree::ptree config)
-	: mainTimer(), innerName(innerName), cooldown(cooldown), isAlive(false){
+ObjectTimer::ObjectTimer(wstring innerName, double cooldown, double spawnAt, int objectMemoryPattern, boost::property_tree::ptree config)
+	: mainTimer(), innerName(innerName), cooldown(cooldown), spawnAt(spawnAt), isAlive(false), isFirstSpawned(false),
+	objectMemoryPattern(objectMemoryPattern), isAlivePtr(0){
 	LOG_VERBOSE((L"Object Timers: Loading " + innerName).c_str());
 
 	//Damn, i hate it, but we need a std::string, not a wstring to deal with ptree
 	string innerNameStr(innerName.begin(), innerName.end());
 
-	
-	/************************************************************************/
-	/*  PATTERNS                                                            */
-	/************************************************************************/
-	//Loading pattern: light
-	string patternUnparsed = config.get<string>("patterns."+innerNameStr+"_light");
-	if(!ParsePatternLine(patternUnparsed, patternLight)){
-		LOG_VERBOSE((L"Object Timers: Cannot load " + innerName + L", light pattern is broken!").c_str());
-		return;
-	}
-	//Loading pattern: shadow
-	patternUnparsed = config.get<string>("patterns."+innerNameStr+"_shadow");
-	if(!ParsePatternLine(patternUnparsed, patternShadow)){
-		LOG_VERBOSE((L"Object Timers: Cannot load " + innerName + L", shadow pattern is broken!").c_str());
-		return;
-	}
-	//Loading pattern: avail
-	patternUnparsed = config.get<string>("patterns."+innerNameStr);
-	if(!ParsePatternLine(patternUnparsed, patternAvail)){
-		LOG_VERBOSE((L"Object Timers: Cannot load " + innerName + L", avail pattern is broken!").c_str());
-		return;
-	}
-	//Coordinates of the left top pixel
-	coords[0] = config.get<int>("patterns."+innerNameStr+"_pos_x");
-	coords[1] = config.get<int>("patterns."+innerNameStr+"_pos_y");
-
-	
 	/************************************************************************/
 	/* OVERLAY                                                              */
 	/************************************************************************/
@@ -110,6 +83,44 @@ ObjectTimer::ObjectTimer(wstring innerName, double cooldown, boost::property_tre
 }
 
 void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice){
+	if(!isAlivePtr){
+		DWORD arr = *((DWORD*)(LOL_MEM_NETOBJECTS_ARRAY_PTR));
+		DWORD obj = 0;
+		for(int i = 0; i < 2500; i++){
+			//Get object itself
+			obj = ((DWORD*)arr)[i];
+			if(obj == 0x00000000)
+				continue;
+			
+			//Grab memory part			
+			int* memSrc = (int *)(obj+LOL_MEM_NETOBJECT_PATTERN_OFFSET);
+
+			//Not this one...
+			if(!memSrc)
+				continue;
+
+			//Check for memory object pattern(see defines.h)
+			if (*memSrc == objectMemoryPattern){
+				LOG_VERBOSE((L"Object Timers(" + innerName + L"): network object found").c_str());
+
+				//Update our saves pointers
+				isAlivePtr = (bool *)(obj+LOL_MEM_NETOBJECT_IS_ALIVE_OFFSET);
+				if(!isAlivePtr){
+					LOG_VERBOSE((L"Object Timers(" + innerName + L"): cannot find isAlive flag. Memory corrupted? Different game version? Humster in the PC?").c_str());
+					continue;
+				}
+
+			}
+		}
+	}
+
+	//Update timers status
+	if(isAlivePtr && *isAlivePtr && !isAlive){
+		Stop();
+	}else if(isAlivePtr && !(*isAlivePtr) && isAlive){
+		Start();
+	}
+
 	//Show label only if we need
 	if(showLabel)
 		//0xFFFFFFFF
@@ -138,15 +149,6 @@ void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice){
 	}
 }
 
-void ObjectTimer::CheckPixels(HDC windowDC){
-	if(!isAlive && CheckPixelMatrix(windowDC, coords, patternAvail))
-			Stop();
-	else if(isAlive && CheckPixelMatrix(windowDC, coords, patternShadow))
-			Start();
-	else if(isAlive && CheckPixelMatrix(windowDC, coords, patternLight))
-			Start();
-}
-
 void ObjectTimer::PrepareRender(PDIRECT3DDEVICE9 pDevice){
 	D3DXCreateFont(pDevice, timerFontSize, 0, timerFontWeight, 1, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, timerFontName.c_str(), &timerFont);
 	Start();
@@ -156,12 +158,12 @@ void ObjectTimer::Start(){
 	boost::mutex::scoped_lock l(timerMutex);
 	isAlive = false;
 	mainTimer.restart();
-	LOG_VERBOSE((L"Object Timers: " + innerName + L" - START").c_str());
+	LOG_VERBOSE((L"Object Timers(" + innerName + L"): START").c_str());
 }
 
 void ObjectTimer::Stop(){
 	isAlive = true;
-	LOG_VERBOSE((L"Object Timers: " + innerName + L" - STOP").c_str());
+	LOG_VERBOSE((L"Object Timers(" + innerName + L"): STOP").c_str());
 }
 
 ObjectTimer::~ObjectTimer(void){

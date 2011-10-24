@@ -10,7 +10,7 @@ namespace JungleTime{
 class ObjectTimer
 {
 public:
-	ObjectTimer(wstring innerName, double cooldown, boost::property_tree::ptree config);
+	ObjectTimer(wstring innerName, double cooldown, double spawnAt, int objectMemoryPattern, boost::property_tree::ptree config);
 	virtual ~ObjectTimer(void);
 
 	void Render(PDIRECT3DDEVICE9 pDevice);
@@ -19,20 +19,21 @@ public:
 	void Start();
 	void Stop();
 
-	void CheckPixels(HDC windowDC);
-
 	bool isAlive;
+
+	//In-game pointers
+	int objectMemoryPattern;
+	bool *isAlivePtr;
+
+	bool isFirstSpawned;
 
 	boost::mutex timerMutex;
 	boost::timer mainTimer;
 	wstring innerName;
 	wstring labelName;
 	double cooldown;
+	double spawnAt;
 	double redLine;
-	COLORREF patternLight[OBJECT_TIMER_PATTERN_SIZE*OBJECT_TIMER_PATTERN_SIZE];
-	COLORREF patternShadow[OBJECT_TIMER_PATTERN_SIZE*OBJECT_TIMER_PATTERN_SIZE];
-	COLORREF patternAvail[OBJECT_TIMER_PATTERN_SIZE*OBJECT_TIMER_PATTERN_SIZE];
-	int coords[2];
 
 	//overlay settings
 	bool showLabel;
