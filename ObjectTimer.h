@@ -2,7 +2,10 @@
 
 #include "defines.h"
 
-#define OBJECT_TIMER_PATTERN_SIZE 4
+#define TIMER_IS_ALIVE (isAlivePtr? *isAlivePtr: false)
+
+#define TIMER_IS_NOT_SPAWNED (!isAlivePtr)
+
 #define TIMER_LABEL_ALIVE L"ALIVE!"
 
 namespace JungleTime{
@@ -10,35 +13,40 @@ namespace JungleTime{
 class ObjectTimer
 {
 public:
-	ObjectTimer(wstring innerName, double cooldown, double spawnAt, int objectMemoryPattern, boost::property_tree::ptree config);
+	ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objectMemoryPattern, boost::property_tree::ptree config);
 	virtual ~ObjectTimer(void);
 
-	void Render(PDIRECT3DDEVICE9 pDevice);
+	void Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs);
 	void PrepareRender(PDIRECT3DDEVICE9 pDevice);
 
 	void Start();
 	void Stop();
 
-	bool isAlive;
+	//Get pointers we can grab only in runtime, after some special in-game events
+	void TryToInitNetobjectPointers();
 
 	//In-game pointers
 	int objectMemoryPattern;
 	bool *isAlivePtr;
 
-	bool isFirstSpawned;
+	//We need to know what was before, to save time in the right moment
+	bool isAliveBefore;
 
-	boost::mutex timerMutex;
-	boost::timer mainTimer;
 	wstring innerName;
 	wstring labelName;
-	double cooldown;
-	double spawnAt;
-	double redLine;
+	int killedAt;
+	int cooldown;
+	int spawnAt;
+	int redLine;
 
-	//overlay settings
+	/************************************************************************/
+	/*    OVERLAY SETTINGS                                                  */
+	/************************************************************************/
+	//Label
 	bool showLabel;
 	RECT labelCoords;
 	
+	//Timer
 	RECT timerCoords;
 	int timerFontSize;
 	int timerFontWeight;
@@ -47,6 +55,7 @@ public:
 	DWORD timerFontRedlineColor;
 	DWORD timerFontAliveColor;
 
+	//Announce
 	bool showAnnounce;
 	RECT announceCoords;
 	int announceFontSize;
@@ -54,6 +63,7 @@ public:
 	wstring announceFontName;
 	DWORD announceFontColor;
 
+	//Overlay fonts
 	LPD3DXFONT timerFont;
 };
 

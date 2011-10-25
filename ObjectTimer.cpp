@@ -1,32 +1,5 @@
 #include "ObjectTimer.h"
 
-bool CheckPixelMatrix(HDC windowDC, int *coords, COLORREF *patterns){
-	COLORREF cur;
-	for (int i = 0; i < OBJECT_TIMER_PATTERN_SIZE*OBJECT_TIMER_PATTERN_SIZE; i++){
-		cur = GetPixel(windowDC, coords[0]+(i%OBJECT_TIMER_PATTERN_SIZE), coords[1]+(i/OBJECT_TIMER_PATTERN_SIZE));
-		if(cur != patterns[i]){
-			return false;
-		}
-	}
-	return true;
-}
-
-bool ParsePatternLine(string line, COLORREF *patternOut){
-	using namespace boost;
-
-	//Split into tokens by "|"
-	vector<string> pixelColors;
-	split(pixelColors, line, is_any_of("|"), token_compress_on);
-	if (pixelColors.size() != OBJECT_TIMER_PATTERN_SIZE*OBJECT_TIMER_PATTERN_SIZE)
-		return false;
-	//Parse numbers
-	for(int i = 0; i != pixelColors.size(); i++){
-		std::stringstream s(pixelColors.at(i));
-		s >> patternOut[i]; 
-	}
-	return true;
-}
-
 wstring StringToWString(const string& s){
 	wstring temp(s.length(),L' ');
 	copy(s.begin(), s.end(), temp.begin());
@@ -35,9 +8,9 @@ wstring StringToWString(const string& s){
 
 namespace JungleTime{
 
-ObjectTimer::ObjectTimer(wstring innerName, double cooldown, double spawnAt, int objectMemoryPattern, boost::property_tree::ptree config)
-	: mainTimer(), innerName(innerName), cooldown(cooldown), spawnAt(spawnAt), isAlive(false), isFirstSpawned(false),
-	objectMemoryPattern(objectMemoryPattern), isAlivePtr(0){
+ObjectTimer::ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objectMemoryPattern, boost::property_tree::ptree config)
+	: innerName(innerName), cooldown(cooldown), spawnAt(spawnAt), objectMemoryPattern(objectMemoryPattern),
+	killedAt(0), isAlivePtr(0), isAliveBefore(false){
 	LOG_VERBOSE((L"Object Timers: Loading " + innerName).c_str());
 
 	//Damn, i hate it, but we need a std::string, not a wstring to deal with ptree
@@ -82,55 +55,33 @@ ObjectTimer::ObjectTimer(wstring innerName, double cooldown, double spawnAt, int
 	LOG_VERBOSE((L"Object Timers: Loading " + innerName + L" - done").c_str());
 }
 
-void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice){
-	if(!isAlivePtr){
-		DWORD arr = *((DWORD*)(LOL_MEM_NETOBJECTS_ARRAY_PTR));
-		DWORD obj = 0;
-		for(int i = 0; i < 2500; i++){
-			//Get object itself
-			obj = ((DWORD*)arr)[i];
-			if(obj == 0x00000000)
-				continue;
-			
-			//Grab memory part			
-			int* memSrc = (int *)(obj+LOL_MEM_NETOBJECT_PATTERN_OFFSET);
-
-			//Not this one...
-			if(!memSrc)
-				continue;
-
-			//Check for memory object pattern(see defines.h)
-			if (*memSrc == objectMemoryPattern){
-				LOG_VERBOSE((L"Object Timers(" + innerName + L"): network object found").c_str());
-
-				//Update our saves pointers
-				isAlivePtr = (bool *)(obj+LOL_MEM_NETOBJECT_IS_ALIVE_OFFSET);
-				if(!isAlivePtr){
-					LOG_VERBOSE((L"Object Timers(" + innerName + L"): cannot find isAlive flag. Memory corrupted? Different game version? Humster in the PC?").c_str());
-					continue;
-				}
-
-			}
-		}
-	}
-
-	//Update timers status
-	if(isAlivePtr && *isAlivePtr && !isAlive){
-		Stop();
-	}else if(isAlivePtr && !(*isAlivePtr) && isAlive){
-		Start();
-	}
+void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs){
+	//Every 10 frames we'll try to find net-objects
+	if(!isAlivePtr && frameNum%10 == 0)
+		TryToInitNetobjectPointers();
 
 	//Show label only if we need
 	if(showLabel)
 		//0xFFFFFFFF
 		timerFont->DrawText(NULL, labelName.c_str(), -1, &labelCoords, DT_NOCLIP, timerFontColor);
-	if(isAlive)
+	
+	//If object isn't spawned yet, we need to display time, left to first spawn
+	if(TIMER_IS_ALIVE){
+		//Now it's alive!
+		if(!isAliveBefore)
+			isAliveBefore = true;
+
 		//0xFFB5E61D
 		timerFont->DrawText(NULL, TIMER_LABEL_ALIVE, -1, &timerCoords, DT_NOCLIP, timerFontAliveColor);
-	else{
-		boost::mutex::scoped_lock l(timerMutex);
-		double timeLeft = cooldown - mainTimer.elapsed();
+	}else{
+		//Now it's dead...
+		if(isAliveBefore){
+			killedAt = curTimeSecs;
+			isAliveBefore = false;
+		}
+		
+		//Get time to [next]spawn
+		int timeLeft = TIMER_IS_NOT_SPAWNED? spawnAt - curTimeSecs : cooldown - (curTimeSecs - killedAt);
 		
 		//I don't want to show you a negative numbers
 		timeLeft = timeLeft < 0 ? 0 : timeLeft;
@@ -150,20 +101,44 @@ void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice){
 }
 
 void ObjectTimer::PrepareRender(PDIRECT3DDEVICE9 pDevice){
+	//Create DirectX objects
 	D3DXCreateFont(pDevice, timerFontSize, 0, timerFontWeight, 1, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, timerFontName.c_str(), &timerFont);
-	Start();
+
+	//Gather pointers to needed related information from the game
+	TryToInitNetobjectPointers();
 }
 
-void ObjectTimer::Start(){
-	boost::mutex::scoped_lock l(timerMutex);
-	isAlive = false;
-	mainTimer.restart();
-	LOG_VERBOSE((L"Object Timers(" + innerName + L"): START").c_str());
-}
+void ObjectTimer::TryToInitNetobjectPointers(){
+	if(isAlivePtr)
+		return;
+	DWORD arr = *((DWORD*)(LOL_MEM_NETOBJECTS_ARRAY_PTR));
+	DWORD obj = 0;
+	for(int i = 0; i < LOL_MEM_NETOBJECTS_MAX; i++){
+		//Get object itself
+		obj = ((DWORD*)arr)[i];
+		if(obj == 0x00000000)
+			continue;
 
-void ObjectTimer::Stop(){
-	isAlive = true;
-	LOG_VERBOSE((L"Object Timers(" + innerName + L"): STOP").c_str());
+		//Grab memory part			
+		int* memSrc = (int *)(obj+LOL_MEM_NETOBJECT_PATTERN_OFFSET);
+
+		//Not this one...
+		if(!memSrc)
+			continue;
+
+		//Check for memory object pattern(see defines.h)
+		if (*memSrc == objectMemoryPattern){
+			LOG_VERBOSE((L"Object Timers(" + innerName + L"): network object found").c_str());
+
+			//Update our saves pointers
+			isAlivePtr = (bool *)(obj+LOL_MEM_NETOBJECT_IS_ALIVE_OFFSET);
+			if(!isAlivePtr){
+				LOG_VERBOSE((L"Object Timers(" + innerName + L"): cannot find isAlive flag. Memory corrupted? Different game version? Humster in the PC?").c_str());
+				continue;
+			}
+
+		}
+	}
 }
 
 ObjectTimer::~ObjectTimer(void){

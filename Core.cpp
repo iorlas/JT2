@@ -5,7 +5,8 @@ namespace JungleTime{
 
 Core* Core::singleton;
 
-Core::Core(void) : DX9Manager(), isEnabled(true){
+Core::Core(void) : DX9Manager(), isEnabled(true),
+	ingameClockNow(NULL), ingameClockStart(NULL){
 	LOG_VERBOSE(L"* Core created");
 }
 
@@ -44,12 +45,30 @@ void Core::OnDXInitiated(void){
 	LOG_VERBOSE(L"Core(Timers): done");
 }
 void Core::OnDXEndScene(LPDIRECT3DDEVICE9 pDevice){
+	//Increase special frames counter
+	framesCounter %= 100; //Overflow...
+	framesCounter++;
+
+	//Get current in-game time
+	int curTime = LOL_MEM_GET_GAMETIME();
+
+	//Go-go!
 	for (vector<boost::shared_ptr<ObjectTimer>>::iterator it = timers.begin(); it != timers.end(); it++)
-		(*it)->Render(pDevice);
+		(*it)->Render(pDevice, framesCounter, curTime);
 }
 void Core::OnDXFirstFrame(LPDIRECT3DDEVICE9 pDevice){
+	InitTimePointers();
+
 	for (vector<boost::shared_ptr<ObjectTimer>>::iterator it = timers.begin(); it != timers.end(); it++)
 		(*it)->PrepareRender(pDevice);
+}
+
+void Core::InitTimePointers(){
+	//Clock pointers, so special...
+	if(ingameClockNow == NULL)
+		ingameClockNow = (float *)((*(DWORD*)LOL_MEM_CURRENT_TIME_STRUCT_PTR)+LOL_MEM_CURRENT_TIME_OFFSET);
+	if(ingameClockStart == NULL)
+		ingameClockStart = (float *)LOL_MEM_START_TIME_PTR;
 }
 
 }
