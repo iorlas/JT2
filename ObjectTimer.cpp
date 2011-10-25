@@ -57,7 +57,10 @@ ObjectTimer::ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objec
 
 void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs){
 	//Every 10 frames we'll try to find net-objects
-	if(!isAlivePtr && frameNum%10 == 0)
+	// !isAlivePtr - if this pointer isn't null, it means we already have all pointers
+	// (curTimeSecs > spawnAt-5) - we dont need to check for object before it CAN BE spawned. So 3 is a difference.
+	// frameNum%10 == 0 - we cant check all things every frame, cause it is unneccesery and can overload LoL graphics engine
+	if(!isAlivePtr && (curTimeSecs > spawnAt-3) && frameNum%10 == 0)
 		TryToInitNetobjectPointers();
 
 	//Show label only if we need

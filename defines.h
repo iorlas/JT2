@@ -55,9 +55,15 @@ LOG_USE;
 /************************************************************************/
 /*    NET-OBJECTS MEMORY PATTERNS                                       */
 /************************************************************************/
+
+#define LOL_MEM_NETOBJECT_TOP_WOLVES_PATTERN 0x46234E18 //18 4E 23 46
+#define LOL_MEM_NETOBJECT_TOP_WRAITHS_PATTERN 0x45E72AF2 //F2 2A E7 45
+#define LOL_MEM_NETOBJECT_TOP_BLUE_PATTERN 0x46224A6C //6C 4A 22 46
+
 #define LOL_MEM_NETOBJECT_BOT_WOLVES_PATTERN 0x454FBADA //DA BA 4F 45
 #define LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN 0x45F766BD //BD 66 F7 45
 
+#define LOL_MEM_NETOBJECT_DRAGON_PATTERN 0x4613CE14 //14 CE 13 46
 
 /************************************************************************/
 /*    IN-GAME TIME HELPERS AND POINTERS/OFFSETS                         */
