@@ -21,7 +21,7 @@ private:
 
 	void InitTimePointers();
 
-	vector<IRenderableObject*> timers;
+	vector<IRenderableObject*> renderObjects;
 
 	//Pointers to in-game clock values
 	float* ingameClockNow;

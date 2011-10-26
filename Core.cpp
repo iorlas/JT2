@@ -12,7 +12,7 @@ Core::Core(void) : DX9Manager(), isEnabled(true),
 
 Core::~Core(void){
 	//Kill it with holy fire!
-	for (vector<IRenderableObject*>::iterator it = timers.begin(); it != timers.end(); it++)
+	for (vector<IRenderableObject*>::iterator it = renderObjects.begin(); it != renderObjects.end(); it++)
 		delete *it;
 
 	LOG_VERBOSE(L"* Core closed");
@@ -23,7 +23,7 @@ int Core::Init(void){
 	return TRUE;
 }
 
-#define TIMER_NEW(innname, cd, spawnat, mempattern) timers.push_back(new ObjectTimer(##innname, ##cd, ##spawnat, ##mempattern));
+#define TIMER_NEW(innname, cd, spawnat, mempattern) renderObjects.push_back(new ObjectTimer(##innname, ##cd, ##spawnat, ##mempattern));
 void Core::OnDXInitiated(void){
 	//Loading all the timers
 	LOG_VERBOSE(L"Core: Timers: Initiate...");
@@ -54,13 +54,13 @@ void Core::OnDXEndScene(LPDIRECT3DDEVICE9 pDevice){
 	int curTime = LOL_MEM_GET_GAMETIME();
 
 	//Go-go!
-	for (vector<IRenderableObject*>::iterator it = timers.begin(); it != timers.end(); it++)
+	for (vector<IRenderableObject*>::iterator it = renderObjects.begin(); it != renderObjects.end(); it++)
 		(*it)->Render(pDevice, framesCounter, curTime);
 }
 void Core::OnDXFirstFrame(LPDIRECT3DDEVICE9 pDevice){
 	InitTimePointers();
 
-	for (vector<IRenderableObject*>::iterator it = timers.begin(); it != timers.end(); it++)
+	for (vector<IRenderableObject*>::iterator it = renderObjects.begin(); it != renderObjects.end(); it++)
 		(*it)->PrepareRender(pDevice);
 }
 
