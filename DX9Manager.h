@@ -10,7 +10,7 @@ public:
 	DX9Manager(void);
 	~DX9Manager(void);
 
-	void MainHookDX9(void);
+	static DWORD WINAPI MainHookDX9(LPVOID Param);
 
 	//Our dirty hooks...
 	static void HookEndScene(LPDIRECT3DDEVICE9 pDevice);
@@ -30,7 +30,7 @@ private:
 	//On each frame
 	virtual void OnDXEndScene(LPDIRECT3DDEVICE9 pDevice);
 
-	boost::shared_ptr<boost::thread> thrDXHook;
+	HANDLE hDXHookThread;
 
 	//For the "loading..." label
 	LPD3DXFONT consoleFont;

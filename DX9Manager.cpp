@@ -12,7 +12,7 @@ DX9Manager::DX9Manager(void):
 		LOG_VERBOSE(L"DX9 manager: dude... you are idiot, we cant create more singletons >:(");
 	singleton = this;
 	SetRect(&consoleRect, 20, 20, 100, 100);
-	thrDXHook = boost::shared_ptr<boost::thread>(new boost::thread(boost::bind(&DX9Manager::MainHookDX9, this)));
+	hDXHookThread = CreateThread(0, 1024, DX9Manager::MainHookDX9, 0, 0, 0);
 	LOG_VERBOSE(L"* DX9 manager initiated");
 }
 
@@ -30,6 +30,8 @@ DX9Manager::~DX9Manager(void){
 	//TODO: Release temp resources
 	//BUG: If application closes, we cant release any resource. Perhaps, because of loop, it never runs after end of app.
 	//singleton->consoleFont->Release();
+
+	CloseHandle(hDXHookThread);
 
 	LOG_VERBOSE(L"* DX9 manager closed");
 }
@@ -56,7 +58,7 @@ void DX9Manager::HookEndScene(LPDIRECT3DDEVICE9 pDevice){
 	}
 }
 
-void DX9Manager::MainHookDX9(void){
+DWORD WINAPI DX9Manager::MainHookDX9(LPVOID Param){
 	//Waiting for d3d lib is loaded
 	LOG_VERBOSE(L"DX9 manager: waiting for the lib");
     while(GetModuleHandle(L"d3d9.dll")==NULL)
@@ -69,7 +71,7 @@ void DX9Manager::MainHookDX9(void){
 	if(!D3D9DeviceFuncHook){
 		LOG_ERR(L"! DX9 manager: cannot find D3D9DeviceFuncHook function in the d3d9.dll! Maybe broken D3D9 Proxy?");
 		MessageBox(NULL, L"JT2 Lib Error", L"Cannot load special functions. You need to use special d3d9.dll proxy library!", MB_OK | MB_ICONERROR);
-		return;
+		return 0;
 	}
 
 	//Trying to hook
@@ -82,7 +84,9 @@ void DX9Manager::MainHookDX9(void){
 	LOG_VERBOSE(L"DX9 manager: hooking done");
 	
 	//Touch our event...
-	OnDXInitiated();
+	singleton->OnDXInitiated();
+
+	return 0;
 }
 
 void DX9Manager::OnDXFirstFrame(LPDIRECT3DDEVICE9 pDevice){

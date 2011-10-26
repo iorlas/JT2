@@ -37,6 +37,9 @@ public:
 		close();
 	}
 
+	//Hide deprecation warning, it's just a trashy output...
+	#pragma warning(push)
+	#pragma warning(disable: 4996)
 	void init(char *pfileName) {
 		if(pfileName != NULL) {
 			fp = fopen(pfileName, "a+");
@@ -44,6 +47,7 @@ public:
 		}
 		mutex = CreateMutex(NULL, FALSE, L"LogFileMutex");
 	}
+	#pragma warning(pop)
 
 	void close() {
 		if(fp != NULL) {

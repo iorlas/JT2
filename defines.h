@@ -29,9 +29,6 @@ using namespace std;
 
 #include <iostream>
 
-#include <boost/thread.hpp>
-#include <boost/algorithm/string.hpp>
-
 #include "D3D9Proxy/common.h"
 
 #include "log.h"
