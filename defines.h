@@ -30,9 +30,6 @@ using namespace std;
 #include <iostream>
 
 #include <boost/thread.hpp>
-#include <boost/timer.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/ini_parser.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include "D3D9Proxy/common.h"
@@ -72,3 +69,10 @@ LOG_USE;
 #define LOL_MEM_CURRENT_TIME_STRUCT_PTR 0x00B42224
 #define LOL_MEM_CURRENT_TIME_OFFSET 0x00000008
 #define LOL_MEM_GET_GAMETIME() ((ingameClockNow && ingameClockStart)? ((int)floor(*ingameClockNow - *ingameClockStart)) : 0)
+
+
+/************************************************************************/
+/*     CONFIG FILE NAMES                                                */
+/************************************************************************/
+#define CONFIG_NAME_DESIGN L"./jt2_design.ini" //Design of overlay
+#define CONFIG_NAME_USER L"./jt2_user.ini" //User configuration file

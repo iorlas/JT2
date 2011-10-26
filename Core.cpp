@@ -11,6 +11,10 @@ Core::Core(void) : DX9Manager(), isEnabled(true),
 }
 
 Core::~Core(void){
+	//Kill it with holy fire!
+	for (vector<ObjectTimer*>::iterator it = timers.begin(); it != timers.end(); it++)
+		delete *it;
+
 	LOG_VERBOSE(L"* Core closed");
 }
 
@@ -19,11 +23,8 @@ int Core::Init(void){
 	return TRUE;
 }
 
-#define TIMER_NEW(innname, cd, spawnat, mempattern) timers.push_back(boost::shared_ptr<ObjectTimer>(new ObjectTimer(##innname, ##cd, ##spawnat, ##mempattern, resConfig)));
+#define TIMER_NEW(innname, cd, spawnat, mempattern) timers.push_back(new ObjectTimer(##innname, ##cd, ##spawnat, ##mempattern));
 void Core::OnDXInitiated(void){
-	//Our config for the current resolution
-	boost::property_tree::ini_parser::read_ini("jt2_resconf_cur.ini", resConfig);
-
 	//Loading all the timers
 	LOG_VERBOSE(L"Core: Timers: Initiate...");
 	TIMER_NEW(L"baron", 420, 900, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
@@ -53,13 +54,13 @@ void Core::OnDXEndScene(LPDIRECT3DDEVICE9 pDevice){
 	int curTime = LOL_MEM_GET_GAMETIME();
 
 	//Go-go!
-	for (vector<boost::shared_ptr<ObjectTimer>>::iterator it = timers.begin(); it != timers.end(); it++)
+	for (vector<ObjectTimer*>::iterator it = timers.begin(); it != timers.end(); it++)
 		(*it)->Render(pDevice, framesCounter, curTime);
 }
 void Core::OnDXFirstFrame(LPDIRECT3DDEVICE9 pDevice){
 	InitTimePointers();
 
-	for (vector<boost::shared_ptr<ObjectTimer>>::iterator it = timers.begin(); it != timers.end(); it++)
+	for (vector<ObjectTimer*>::iterator it = timers.begin(); it != timers.end(); it++)
 		(*it)->PrepareRender(pDevice);
 }
 

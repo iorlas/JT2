@@ -2,3 +2,8 @@
 *.filters
 *.user
 /Debug
+*.opensdf
+*.sdf
+/Release
+/ipch
+*.suo

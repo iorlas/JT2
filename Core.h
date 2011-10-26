@@ -21,10 +21,7 @@ private:
 
 	void InitTimePointers();
 
-	vector<boost::shared_ptr<ObjectTimer>> timers;
-
-	boost::property_tree::ptree userConfig;
-	boost::property_tree::ptree resConfig;
+	vector<ObjectTimer*> timers;
 
 	//Pointers to in-game clock values
 	float* ingameClockNow;

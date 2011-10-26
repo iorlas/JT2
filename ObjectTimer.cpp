@@ -6,43 +6,65 @@ wstring StringToWString(const string& s){
 	return temp; 
 }
 
+wstring INIReadStr(wstring cat, wstring name, wstring fileName){
+	WCHAR buffer[1024];
+	int res = GetPrivateProfileString(cat.c_str(), name.c_str(), L"NONE_STR", buffer, -1, fileName.c_str());
+	if(res == -2 || res == -3){
+		LOG_VERBOSE((L"INI Loader: cannot load string " + cat + L"." + name + L": buffer too small").c_str());
+		return L"ERR1";
+	}
+	if(res == -1){
+		res = GetLastError();
+		if(res == 0x2){
+			LOG_VERBOSE((L"INI Loader: cannot load string " + cat + L"." + name + L": config file not found").c_str());
+			return L"ERR404";
+		}
+	}
+	return wstring(buffer);
+}
+
+int INIReadInt(wstring cat, wstring name, wstring fileName){
+	int res = GetPrivateProfileInt(cat.c_str(), name.c_str(), -1, fileName.c_str());
+	if(GetLastError() == 0x2)
+		LOG_VERBOSE((L"INI Loader: cannot load int " + cat + L"." + name + L": config file not found").c_str());
+	return res;
+}
+
 namespace JungleTime{
 
-ObjectTimer::ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objectMemoryPattern, boost::property_tree::ptree config)
+ObjectTimer::ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objectMemoryPattern)
 	: innerName(innerName), cooldown(cooldown), spawnAt(spawnAt), objectMemoryPattern(objectMemoryPattern),
 	killedAt(0), isAlivePtr(0), isAliveBefore(false){
 	LOG_VERBOSE((L"Object Timers: Loading " + innerName).c_str());
-
-	//Damn, i hate it, but we need a std::string, not a wstring to deal with ptree
-	string innerNameStr(innerName.begin(), innerName.end());
 
 	/************************************************************************/
 	/* OVERLAY                                                              */
 	/************************************************************************/
 	//Label
-	labelName = StringToWString(config.get<string>("overlay."+innerNameStr+"_label_name"));
-	showLabel = config.get<bool>("overlay."+innerNameStr+"_show_label");
+	labelName = INIReadStr(L"overlay", innerName+L"_label_name", CONFIG_NAME_DESIGN);
+	showLabel = !!INIReadInt(L"overlay", innerName+L"_show_label", CONFIG_NAME_DESIGN);
 	SetRect(&labelCoords,
-		config.get<int>("overlay."+innerNameStr+"_label_pos_x"),
-		config.get<int>("overlay."+innerNameStr+"_label_pos_y"),
+		INIReadInt(L"overlay", innerName+L"_label_pos_x", CONFIG_NAME_DESIGN),
+		INIReadInt(L"overlay", innerName+L"_label_pos_y", CONFIG_NAME_DESIGN),
 		300, 300);
 
 	//Timer
-	timerFontSize = config.get<int>("overlay."+innerNameStr+"_timer_font_size");
-	timerFontWeight = config.get<int>("overlay."+innerNameStr+"_timer_font_weight");
-	timerFontName = StringToWString(config.get<string>("overlay."+innerNameStr+"_timer_font_name"));
-	timerFontColor = config.get<DWORD>("overlay."+innerNameStr+"_timer_font_color");
-	timerFontRedlineColor = config.get<DWORD>("overlay."+innerNameStr+"_timer_font_redline_color");
-	timerFontAliveColor = config.get<DWORD>("overlay."+innerNameStr+"_timer_font_alive_color");
+	timerFontSize = INIReadInt(L"overlay", innerName+L"_timer_font_size", CONFIG_NAME_DESIGN);
+	timerFontWeight = INIReadInt(L"overlay", innerName+L"_timer_font_weight", CONFIG_NAME_DESIGN);
+	timerFontName = INIReadStr(L"overlay", innerName+L"_timer_font_name", CONFIG_NAME_DESIGN);
+	timerFontColor = INIReadInt(L"overlay", innerName+L"_timer_font_color", CONFIG_NAME_DESIGN);
+	timerFontRedlineColor = INIReadInt(L"overlay", innerName+L"_timer_font_redline_color", CONFIG_NAME_DESIGN);
+	timerFontAliveColor = INIReadInt(L"overlay", innerName+L"_timer_font_alive_color", CONFIG_NAME_DESIGN);
 
-	redLine = config.get<double>("overlay."+innerNameStr+"_red_line");
+	redLine = INIReadInt(L"overlay", innerName+L"_red_line", CONFIG_NAME_DESIGN);
 	SetRect(&timerCoords,
-		config.get<int>("overlay."+innerNameStr+"_timer_pos_x"),
-		config.get<int>("overlay."+innerNameStr+"_timer_pos_y"),
+		INIReadInt(L"overlay", innerName+L"_timer_pos_x", CONFIG_NAME_DESIGN),
+		INIReadInt(L"overlay", innerName+L"_timer_pos_y", CONFIG_NAME_DESIGN),
 		300, 300);
 
 	//Announce
-	showAnnounce = config.get<bool>("overlay."+innerNameStr+"_show_announce");
+	//NODO: Not implemented yet, so we don't need to load it.
+	/*showAnnounce = config.get<bool>("overlay."+innerNameStr+"_show_announce");
 	announceFontSize = config.get<int>("overlay."+innerNameStr+"_announce_font_size");
 	announceFontWeight = config.get<int>("overlay."+innerNameStr+"_announce_font_weight");
 	announceFontName = StringToWString(config.get<string>("overlay."+innerNameStr+"_announce_font_name"));
@@ -50,7 +72,7 @@ ObjectTimer::ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objec
 	SetRect(&announceCoords,
 		config.get<int>("overlay."+innerNameStr+"_announce_pos_x"),
 		config.get<int>("overlay."+innerNameStr+"_announce_pos_y"),
-		300, 300);
+		300, 300);*/
 
 	LOG_VERBOSE((L"Object Timers: Loading " + innerName + L" - done").c_str());
 }

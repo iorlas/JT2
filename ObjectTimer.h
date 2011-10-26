@@ -13,14 +13,11 @@ namespace JungleTime{
 class ObjectTimer
 {
 public:
-	ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objectMemoryPattern, boost::property_tree::ptree config);
+	ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objectMemoryPattern);
 	virtual ~ObjectTimer(void);
 
 	void Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs);
 	void PrepareRender(PDIRECT3DDEVICE9 pDevice);
-
-	void Start();
-	void Stop();
 
 	//Get pointers we can grab only in runtime, after some special in-game events
 	void TryToInitNetobjectPointers();
@@ -32,21 +29,23 @@ public:
 	//We need to know what was before, to save time in the right moment
 	bool isAliveBefore;
 
+	//Name for config and logging
 	wstring innerName;
-	wstring labelName;
+	
 	int killedAt;
 	int cooldown;
 	int spawnAt;
-	int redLine;
 
 	/************************************************************************/
 	/*    OVERLAY SETTINGS                                                  */
 	/************************************************************************/
 	//Label
+	wstring labelName;
 	bool showLabel;
 	RECT labelCoords;
 	
 	//Timer
+	int redLine;
 	RECT timerCoords;
 	int timerFontSize;
 	int timerFontWeight;
