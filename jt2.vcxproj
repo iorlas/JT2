@@ -14,8 +14,10 @@
     <ClInclude Include="Core.h" />
     <ClInclude Include="defines.h" />
     <ClInclude Include="DX9Manager.h" />
+    <ClInclude Include="IRenderable.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="ObjectTimer.h" />
+    <ClInclude Include="SmiteIgniteIndicator.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core.cpp" />

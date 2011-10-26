@@ -69,6 +69,18 @@ public:
 		}
 		ReleaseMutex(mutex);
 	}
+
+	void write_ptr(LPCWSTR pType, LPCWSTR pMsg, LPCWSTR pFileName, int lineNo, DWORD ptr) {
+		DWORD dwWaitResult = 0;
+		while(dwWaitResult != WAIT_OBJECT_0) {
+			dwWaitResult = WaitForSingleObject(mutex, 1);
+		}
+		if(fp != NULL) {
+			fwprintf(fp, L"%s\t%lld\t%s\t%d\t%s - %p\n", pType, time(NULL), pFileName, lineNo, pMsg, ptr);
+			fflush(fp);
+		}
+		ReleaseMutex(mutex);
+	}
 };
 
 #endif

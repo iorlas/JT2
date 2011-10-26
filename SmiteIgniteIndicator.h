@@ -62,10 +62,9 @@ public:
 			return;
 		
 		wchar_t istr[30];
-		//_itow_s(flat+perlvl*(*playerLevel), istr, 10);
-		_itow_s(flat+perlvl*(9), istr, 10);
+		_itow_s(flat+perlvl*(*playerLevel), istr, 10);
 
-		font->DrawText(NULL, labelName.c_str(), -1, &indiCoords, DT_NOCLIP, labelFontColor);
+		font->DrawText(NULL, labelName.c_str(), -1, &labelCoords, DT_NOCLIP, labelFontColor);
 		font->DrawText(NULL, istr, -1, &indiCoords, DT_NOCLIP, indiFontColor);
 	}
 	void PrepareRender(PDIRECT3DDEVICE9 pDevice){
@@ -79,6 +78,15 @@ public:
 private:
 	//Get pointers we can grab only in runtime, after some special in-game events
 	void TryToInitPointers(){
+		DWORD res = *((DWORD *)LOL_MEM_PLAYER_LEVEL_PTR);
+		if(!res)
+			return;
+		res += LOL_MEM_PLAYER_LEVEL_OFFSET1;
+		res = *((DWORD *)res);
+		if(!res)
+			return;
+		res += LOL_MEM_PLAYER_LEVEL_OFFSET2;
+		playerLevel = (int*)res;
 		LOG_VERBOSE((L"Object Indicator(" + innerName + L"): pointers found").c_str());
 	}
 

@@ -68,6 +68,9 @@ LOG_USE;
 #define LOL_MEM_CURRENT_TIME_OFFSET 0x00000008
 #define LOL_MEM_GET_GAMETIME() ((ingameClockNow && ingameClockStart)? ((int)floor(*ingameClockNow - *ingameClockStart)) : 0)
 
+#define LOL_MEM_PLAYER_LEVEL_PTR 0x00B42344
+#define LOL_MEM_PLAYER_LEVEL_OFFSET1 0x000000DC
+#define LOL_MEM_PLAYER_LEVEL_OFFSET2 0x00000100
 
 /************************************************************************/
 /*     CONFIG FILE NAMES                                                */
