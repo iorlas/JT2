@@ -26,9 +26,6 @@ private:
 	float* ingameClockNow;
 	float* ingameClockStart;
 
-	//We need this flag for the pixel-matching loop
-	bool isEnabled;
-
 	//For some expensive operations, we cant do things every frame, so we need a counter to
 	// make operations do things "each N frames"
 	int framesCounter;

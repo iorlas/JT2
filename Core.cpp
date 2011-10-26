@@ -8,7 +8,7 @@ namespace JungleTime{
 
 Core* Core::singleton;
 
-Core::Core(void) : DX9Manager(), isEnabled(true),
+Core::Core(void) : DX9Manager(),
 	ingameClockNow(NULL), ingameClockStart(NULL){
 	LOG_VERBOSE(L"* Core created");
 }
@@ -29,29 +29,46 @@ int Core::Init(void){
 #define TIMER_NEW(innname, cd, spawnat, mempattern) renderObjects.push_back(new ObjectTimer(##innname, ##cd, ##spawnat, ##mempattern));
 #define INDICATOR_NEW(innname, flat, perlvl) renderObjects.push_back(new SmiteIgniteIndicator(##innname, ##flat, ##perlvl));
 void Core::OnDXInitiated(void){
-	//Loading all the timers
-	LOG_VERBOSE(L"Core: Timers: Initiate...");
-	TIMER_NEW(L"baron", 420, 900, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
-	TIMER_NEW(L"dragon", 360, 150, LOL_MEM_NETOBJECT_DRAGON_PATTERN);
+	LOG_VERBOSE(L"Core(Objects): Initiate...");
+	//Check current map for support of our timers
+	LOG_VERBOSE(L"Core(Objects): waiting for the map...");
+	int tmp = 0;
+	while((tmp = strlen((char*)LOL_MEM_MAP_NAME_OFFSET)) == 0)
+		Sleep(10);
+	LOG_VERBOSE(L"Core(Objects): map loaded");
+	if((strcmp(LOL_MAP_SUMMONERS_RIFT_NAME, (char*)LOL_MEM_MAP_NAME_OFFSET) == 0) ||
+		(strcmp(LOL_MAP_SUMMONERS_RIFT_AUT_NAME, (char*)LOL_MEM_MAP_NAME_OFFSET) == 0)){
+		tmp = LOL_MAP_SUMMONERS_RIFT;
+		LOG_VERBOSE(L"Core(Objects): current map is Summoners Rift");
+	}
 
-	TIMER_NEW(L"top_blue", 300, 115, LOL_MEM_NETOBJECT_TOP_BLUE_PATTERN);
-	TIMER_NEW(L"top_red", 300, 115, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
-	TIMER_NEW(L"top_wraiths", 100, 100, LOL_MEM_NETOBJECT_TOP_WRAITHS_PATTERN);
-	TIMER_NEW(L"top_golems", 100, 100, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
-	TIMER_NEW(L"top_wolves", 100, 100, LOL_MEM_NETOBJECT_TOP_WOLVES_PATTERN);
+	//We support only Summoners Rift map for jungle camps
+	if(tmp == LOL_MAP_SUMMONERS_RIFT){
+		//Loading all the timers
+		LOG_VERBOSE(L"Core(Objects): Initiate...");
+		TIMER_NEW(L"baron", 420, 900, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
+		TIMER_NEW(L"dragon", 360, 150, LOL_MEM_NETOBJECT_DRAGON_PATTERN);
 
-	TIMER_NEW(L"bot_blue", 300, 115, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
-	TIMER_NEW(L"bot_red", 300, 115, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
-	TIMER_NEW(L"bot_wraiths", 100, 100, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
-	TIMER_NEW(L"bot_golems", 100, 100, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
-	TIMER_NEW(L"bot_wolves", 100, 100, LOL_MEM_NETOBJECT_BOT_WOLVES_PATTERN);
+		TIMER_NEW(L"top_blue", 300, 115, LOL_MEM_NETOBJECT_TOP_BLUE_PATTERN);
+		TIMER_NEW(L"top_red", 300, 115, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
+		TIMER_NEW(L"top_wraiths", 100, 100, LOL_MEM_NETOBJECT_TOP_WRAITHS_PATTERN);
+		TIMER_NEW(L"top_golems", 100, 100, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
+		TIMER_NEW(L"top_wolves", 100, 100, LOL_MEM_NETOBJECT_TOP_WOLVES_PATTERN);
+
+		TIMER_NEW(L"bot_blue", 300, 115, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
+		TIMER_NEW(L"bot_red", 300, 115, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
+		TIMER_NEW(L"bot_wraiths", 100, 100, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
+		TIMER_NEW(L"bot_golems", 100, 100, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
+		TIMER_NEW(L"bot_wolves", 100, 100, LOL_MEM_NETOBJECT_BOT_WOLVES_PATTERN);
+		LOG_VERBOSE(L"Core(Timers): done");
+	}
 
 	//Indicators
 	INDICATOR_NEW(L"smite", 420, 25);
 	INDICATOR_NEW(L"ignite", 50, 20);
-	
+	LOG_VERBOSE(L"Core(Indicators): done");
+
 	isInitiated = true;
-	LOG_VERBOSE(L"Core(Timers): done");
 }
 void Core::OnDXEndScene(LPDIRECT3DDEVICE9 pDevice){
 	//Increase special frames counter

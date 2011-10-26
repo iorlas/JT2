@@ -7,3 +7,5 @@
 /Release
 /ipch
 *.suo
+*.exe
+*.dll

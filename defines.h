@@ -39,6 +39,15 @@ LOG_USE;
 #define IS_DX_LOOP_DEAD (!FindWindow(NULL, LOL_WINDOW_NAME))
 
 /************************************************************************/
+/*    OFFSETS AND DEFINES FOR MAP CHECKING                              */
+/************************************************************************/
+#define LOL_MEM_MAP_NAME_OFFSET 0x02BF272C
+#define LOL_MAP_SUMMONERS_RIFT_NAME "Map1"
+#define LOL_MAP_SUMMONERS_RIFT_AUT_NAME "Map2"
+
+#define LOL_MAP_SUMMONERS_RIFT 1
+
+/************************************************************************/
 /*    NET-OBJECTS OFFSETS AND POINTERS                                  */
 /************************************************************************/
 #define LOL_MEM_NETOBJECT_PATTERN_OFFSET 0x0000005C
@@ -50,7 +59,6 @@ LOG_USE;
 /************************************************************************/
 /*    NET-OBJECTS MEMORY PATTERNS                                       */
 /************************************************************************/
-
 #define LOL_MEM_NETOBJECT_TOP_WOLVES_PATTERN 0x46234E18 //18 4E 23 46
 #define LOL_MEM_NETOBJECT_TOP_WRAITHS_PATTERN 0x45E72AF2 //F2 2A E7 45
 #define LOL_MEM_NETOBJECT_TOP_BLUE_PATTERN 0x46224A6C //6C 4A 22 46
