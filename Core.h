@@ -1,8 +1,8 @@
 #pragma once
 
 #include "DX9Manager.h"
-
 #include "ObjectTimer.h"
+#include "IRenderable.h"
 
 namespace JungleTime{
 
@@ -21,7 +21,7 @@ private:
 
 	void InitTimePointers();
 
-	vector<ObjectTimer*> timers;
+	vector<IRenderableObject*> timers;
 
 	//Pointers to in-game clock values
 	float* ingameClockNow;

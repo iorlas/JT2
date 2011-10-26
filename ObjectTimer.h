@@ -2,15 +2,15 @@
 
 #include "defines.h"
 
+#include "IRenderable.h"
+
 #define TIMER_IS_ALIVE (isAlivePtr? *isAlivePtr: false)
-
 #define TIMER_IS_NOT_SPAWNED (!isAlivePtr)
-
 #define TIMER_LABEL_ALIVE L"ALIVE!"
 
 namespace JungleTime{
 
-class ObjectTimer
+class ObjectTimer : public JungleTime::IRenderableObject
 {
 public:
 	ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objectMemoryPattern);

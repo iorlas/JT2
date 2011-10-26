@@ -12,7 +12,7 @@ Core::Core(void) : DX9Manager(), isEnabled(true),
 
 Core::~Core(void){
 	//Kill it with holy fire!
-	for (vector<ObjectTimer*>::iterator it = timers.begin(); it != timers.end(); it++)
+	for (vector<IRenderableObject*>::iterator it = timers.begin(); it != timers.end(); it++)
 		delete *it;
 
 	LOG_VERBOSE(L"* Core closed");
@@ -54,13 +54,13 @@ void Core::OnDXEndScene(LPDIRECT3DDEVICE9 pDevice){
 	int curTime = LOL_MEM_GET_GAMETIME();
 
 	//Go-go!
-	for (vector<ObjectTimer*>::iterator it = timers.begin(); it != timers.end(); it++)
+	for (vector<IRenderableObject*>::iterator it = timers.begin(); it != timers.end(); it++)
 		(*it)->Render(pDevice, framesCounter, curTime);
 }
 void Core::OnDXFirstFrame(LPDIRECT3DDEVICE9 pDevice){
 	InitTimePointers();
 
-	for (vector<ObjectTimer*>::iterator it = timers.begin(); it != timers.end(); it++)
+	for (vector<IRenderableObject*>::iterator it = timers.begin(); it != timers.end(); it++)
 		(*it)->PrepareRender(pDevice);
 }
 

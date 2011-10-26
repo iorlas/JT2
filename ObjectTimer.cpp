@@ -63,7 +63,7 @@ ObjectTimer::ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objec
 		300, 300);
 
 	//Announce
-	//NODO: Not implemented yet, so we don't need to load it.
+	//TODO: Not implemented yet, so we don't need to load it.
 	/*showAnnounce = config.get<bool>("overlay."+innerNameStr+"_show_announce");
 	announceFontSize = config.get<int>("overlay."+innerNameStr+"_announce_font_size");
 	announceFontWeight = config.get<int>("overlay."+innerNameStr+"_announce_font_weight");
@@ -74,7 +74,7 @@ ObjectTimer::ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objec
 		config.get<int>("overlay."+innerNameStr+"_announce_pos_y"),
 		300, 300);*/
 
-	LOG_VERBOSE((L"Object Timers: Loading " + innerName + L" - done").c_str());
+	LOG_VERBOSE((L"Object Timers(" + innerName + L"): Loading done").c_str());
 }
 
 void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs){
@@ -167,9 +167,9 @@ void ObjectTimer::TryToInitNetobjectPointers(){
 }
 
 ObjectTimer::~ObjectTimer(void){
-	//TODO: Release temp resources
-	//BUG: If application closes, we cant release any resource. Perhaps, because of loop, it never runs after end of app.
-	//timerFont->Release();
+	//Release resources only if application loop is alive, we dont need to freeze application in the process list
+	if(!IS_DX_LOOP_DEAD)
+		timerFont->Release();
 }
 
 }

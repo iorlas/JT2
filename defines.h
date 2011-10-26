@@ -36,6 +36,7 @@ using namespace std;
 LOG_USE;
 
 #define LOL_WINDOW_NAME L"League of Legends (TM) Client"
+#define IS_DX_LOOP_DEAD (!FindWindow(NULL, LOL_WINDOW_NAME))
 
 /************************************************************************/
 /*    NET-OBJECTS OFFSETS AND POINTERS                                  */

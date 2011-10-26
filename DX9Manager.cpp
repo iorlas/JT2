@@ -27,9 +27,9 @@ DX9Manager::~DX9Manager(void){
 	}
 	D3D9DeviceFuncUnHook(ENDSCENE);
 
-	//TODO: Release temp resources
-	//BUG: If application closes, we cant release any resource. Perhaps, because of loop, it never runs after end of app.
-	//singleton->consoleFont->Release();
+	//Release resources only if application loop is alive, we dont need to freeze application in the process list
+	if(!IS_DX_LOOP_DEAD)
+		singleton->consoleFont->Release();
 
 	CloseHandle(hDXHookThread);
 
