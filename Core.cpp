@@ -1,6 +1,9 @@
 #include "defines.h"
 #include "Core.h"
 
+#include "ObjectTimer.h"
+#include "SmiteIgniteIndicator.h"
+
 namespace JungleTime{
 
 Core* Core::singleton;
@@ -24,6 +27,7 @@ int Core::Init(void){
 }
 
 #define TIMER_NEW(innname, cd, spawnat, mempattern) renderObjects.push_back(new ObjectTimer(##innname, ##cd, ##spawnat, ##mempattern));
+#define INDICATOR_NEW(innname, flat, perlvl) renderObjects.push_back(new SmiteIgniteIndicator(##innname, ##flat, ##perlvl));
 void Core::OnDXInitiated(void){
 	//Loading all the timers
 	LOG_VERBOSE(L"Core: Timers: Initiate...");
@@ -41,6 +45,10 @@ void Core::OnDXInitiated(void){
 	TIMER_NEW(L"bot_wraiths", 100, 100, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
 	TIMER_NEW(L"bot_golems", 100, 100, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
 	TIMER_NEW(L"bot_wolves", 100, 100, LOL_MEM_NETOBJECT_BOT_WOLVES_PATTERN);
+
+	//Indicators
+	INDICATOR_NEW(L"smite", 420, 25);
+	INDICATOR_NEW(L"ignite", 50, 20);
 	
 	isInitiated = true;
 	LOG_VERBOSE(L"Core(Timers): done");

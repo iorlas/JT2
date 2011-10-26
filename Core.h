@@ -1,7 +1,6 @@
 #pragma once
 
 #include "DX9Manager.h"
-#include "ObjectTimer.h"
 #include "IRenderable.h"
 
 namespace JungleTime{

@@ -1,11 +1,5 @@
 #include "ObjectTimer.h"
 
-wstring StringToWString(const string& s){
-	wstring temp(s.length(),L' ');
-	copy(s.begin(), s.end(), temp.begin());
-	return temp; 
-}
-
 wstring INIReadStr(wstring cat, wstring name, wstring fileName){
 	WCHAR buffer[1024];
 	int res = GetPrivateProfileString(cat.c_str(), name.c_str(), L"NONE_STR", buffer, -1, fileName.c_str());
