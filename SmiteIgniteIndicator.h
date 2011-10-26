@@ -27,7 +27,7 @@ public:
 	//Label
 	labelName = INIReadStr(L"overlay", innerName+L"_label_name", CONFIG_NAME_DESIGN);
 	showLabel = !!INIReadInt(L"overlay", innerName+L"_show_label", CONFIG_NAME_DESIGN);
-	indiFontColor = INIReadInt(L"overlay", innerName+L"_label_font_color", CONFIG_NAME_DESIGN);
+	labelFontColor = INIReadInt(L"overlay", innerName+L"_label_font_color", CONFIG_NAME_DESIGN);
 	SetRect(&labelCoords,
 		INIReadInt(L"overlay", innerName+L"_label_pos_x", CONFIG_NAME_DESIGN),
 		INIReadInt(L"overlay", innerName+L"_label_pos_y", CONFIG_NAME_DESIGN),
