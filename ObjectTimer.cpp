@@ -161,9 +161,13 @@ void ObjectTimer::TryToInitNetobjectPointers(){
 }
 
 ObjectTimer::~ObjectTimer(void){
+	LOG_VERBOSE((L"Object Timers(" + innerName + L"): unloading").c_str());
+
 	//Release resources only if application loop is alive, we dont need to freeze application in the process list
 	if(!IS_DX_LOOP_DEAD)
 		timerFont->Release();
+
+	LOG_VERBOSE((L"Object Timers(" + innerName + L"): unloaded").c_str());
 }
 
 }

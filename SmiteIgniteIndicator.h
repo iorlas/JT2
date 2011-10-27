@@ -48,9 +48,11 @@ public:
 	}
 
 	virtual ~SmiteIgniteIndicator(void){
+		LOG_VERBOSE((L"Object Indicator(" + innerName + L"): unloading").c_str());
 		//Release resources only if application loop is alive, we dont need to freeze application in the process list
 		if(!IS_DX_LOOP_DEAD)
 			font->Release();
+		LOG_VERBOSE((L"Object Indicator(" + innerName + L"): unloaded").c_str());
 	}
 
 	void Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs){
