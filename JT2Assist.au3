@@ -2,6 +2,9 @@
 Opt("TrayOnEventMode", 1) ;; Enable event-based tray icon
 Opt("TrayMenuMode", 3) ;; No default menu
 
+;; Window find string
+$lolWindow = "[CLASS:LeagueOfLegendsWindowClass]"
+
 ;; Create exec strings
 $injectRunStr = 'winject /dllname:"' & @ScriptDir & '\jt2.dll" /exename:"league of legends.exe"'
 $ejectRunStr = 'winject /dllname:"' & @ScriptDir & '\jt2.dll" /exename:"league of legends.exe" /eject'
@@ -48,8 +51,29 @@ TrayItemSetOnEvent($injectitem, "OnInjectItem")
 TrayItemSetOnEvent($ejectitem, "OnEjectItem")
 TrayItemSetOnEvent($exititem, "OnExitItem")
 
+;; Done...
+TrayTip("JT2 Assist", "Loaded and waits for the LoL client", 1, 1)
+
+;; Main loop
+While 1
+	LoLWinWait()
+	TrayTip("JT2 Assist", "Game window found", 1, 1)
+	Sleep(1000)
+	WinjectInjectJT2()
+	Sleep(1000)
+	WinWaitClose($lolWindow)
+	TrayTip("JT2 Assist", "Game window closed, waiting another one", 1, 1)
+WEnd
+TraySetState(2) ;; Destroys/Hides the tray icon
+
+
+;;
+;; FUNCTIONS
+;;
+
+;; Callbacks
 Func OnInjectItem()
-	If Not WinExists("League of Legends (TM) Client") Then
+	If Not WinExists($lolWindow) Then
     	TrayTip("JT2 Assist", "Cannot inject! Game window not found.", 1, 1)
     Else
     	WinjectInjectJT2()
@@ -57,7 +81,7 @@ Func OnInjectItem()
 EndFunc
 
 Func OnEjectItem()
-    If Not WinExists("League of Legends (TM) Client") Then
+    If Not WinExists($lolWindow) Then
     	TrayTip("JT2 Assist", "Cannot eject! Game window not found.", 1, 1)
     Else
     	WinjectEjectJT2()
@@ -65,20 +89,15 @@ Func OnEjectItem()
 EndFunc
 
 Func OnExitItem()
+	TraySetState(2) ;; Destroys/Hides the tray icon
     Exit
 EndFunc
 
-;; Done...
-TrayTip("JT2 Assist", "Loaded and waits for the LoL client", 1, 1)
+;; Other
+Func LoLWinWait()
+	WinWait($lolWindow)
 
-;; Main loop
-While 1
-	WinWait("League of Legends (TM) Client")
-	TrayTip("JT2 Assist", "Game window found", 1, 1)
-	Sleep(1000)
-	WinjectInjectJT2()
-	Sleep(1000)
-	WinWaitClose("League of Legends (TM) Client")
-	TrayTip("JT2 Assist", "Game window closed, waiting another one", 1, 1)
-WEnd
-TraySetState(2) ;; Destroys/Hides the tray icon
+	;; Small hack to avoid bugs(see issue 22)
+	WinWaitClose("[CLASS:SplashScreenClassName]")
+	Sleep(5000)
+EndFunc

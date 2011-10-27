@@ -81,12 +81,15 @@ void Core::OnDXEndScene(LPDIRECT3DDEVICE9 pDevice){
 	//Go-go!
 	for (vector<IRenderableObject*>::iterator it = renderObjects.begin(); it != renderObjects.end(); it++)
 		(*it)->Render(pDevice, framesCounter, curTime);
+	LOG_VERBOSE(L"Core: frame...");
 }
 void Core::OnDXFirstFrame(LPDIRECT3DDEVICE9 pDevice){
+	LOG_VERBOSE(L"Core: first frame");
 	InitTimePointers();
 
 	for (vector<IRenderableObject*>::iterator it = renderObjects.begin(); it != renderObjects.end(); it++)
 		(*it)->PrepareRender(pDevice);
+	LOG_VERBOSE(L"Core: first frame done");
 }
 
 void Core::InitTimePointers(){

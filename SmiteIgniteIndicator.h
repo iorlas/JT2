@@ -19,32 +19,32 @@ class SmiteIgniteIndicator : public JungleTime::IRenderableObject
 public:
 	SmiteIgniteIndicator(wstring innerName, int flat, int perlvl)
 		: innerName(innerName), flat(flat), perlvl(perlvl){
-	LOG_VERBOSE((L"Object Indicator: Loading " + innerName).c_str());
+		LOG_VERBOSE((L"Object Indicator: Loading " + innerName).c_str());
 
-	/************************************************************************/
-	/* OVERLAY                                                              */
-	/************************************************************************/
-	//Label
-	labelName = INIReadStr(L"overlay", innerName+L"_label_name", CONFIG_NAME_DESIGN);
-	showLabel = !!INIReadInt(L"overlay", innerName+L"_show_label", CONFIG_NAME_DESIGN);
-	labelFontColor = INIReadInt(L"overlay", innerName+L"_label_font_color", CONFIG_NAME_DESIGN);
-	SetRect(&labelCoords,
-		INIReadInt(L"overlay", innerName+L"_label_pos_x", CONFIG_NAME_DESIGN),
-		INIReadInt(L"overlay", innerName+L"_label_pos_y", CONFIG_NAME_DESIGN),
-		300, 300);
+		/************************************************************************/
+		/* OVERLAY                                                              */
+		/************************************************************************/
+		//Label
+		labelName = INIReadStr(L"overlay", innerName+L"_label_name", CONFIG_NAME_DESIGN);
+		showLabel = !!INIReadInt(L"overlay", innerName+L"_show_label", CONFIG_NAME_DESIGN);
+		labelFontColor = INIReadInt(L"overlay", innerName+L"_label_font_color", CONFIG_NAME_DESIGN);
+		SetRect(&labelCoords,
+			INIReadInt(L"overlay", innerName+L"_label_pos_x", CONFIG_NAME_DESIGN),
+			INIReadInt(L"overlay", innerName+L"_label_pos_y", CONFIG_NAME_DESIGN),
+			300, 300);
 
-	//Indicator
-	indiFontSize = INIReadInt(L"overlay", innerName+L"_indi_font_size", CONFIG_NAME_DESIGN);
-	indiFontWeight = INIReadInt(L"overlay", innerName+L"_indi_font_weight", CONFIG_NAME_DESIGN);
-	indiFontName = INIReadStr(L"overlay", innerName+L"_indi_font_name", CONFIG_NAME_DESIGN);
-	indiFontColor = INIReadInt(L"overlay", innerName+L"_indi_font_color", CONFIG_NAME_DESIGN);
+		//Indicator
+		indiFontSize = INIReadInt(L"overlay", innerName+L"_indi_font_size", CONFIG_NAME_DESIGN);
+		indiFontWeight = INIReadInt(L"overlay", innerName+L"_indi_font_weight", CONFIG_NAME_DESIGN);
+		indiFontName = INIReadStr(L"overlay", innerName+L"_indi_font_name", CONFIG_NAME_DESIGN);
+		indiFontColor = INIReadInt(L"overlay", innerName+L"_indi_font_color", CONFIG_NAME_DESIGN);
 
-	SetRect(&indiCoords,
-		INIReadInt(L"overlay", innerName+L"_indi_pos_x", CONFIG_NAME_DESIGN),
-		INIReadInt(L"overlay", innerName+L"_indi_pos_y", CONFIG_NAME_DESIGN),
-		300, 300);
-	
-	LOG_VERBOSE((L"Object Indicator(" + innerName + L"): Loading done").c_str());
+		SetRect(&indiCoords,
+			INIReadInt(L"overlay", innerName+L"_indi_pos_x", CONFIG_NAME_DESIGN),
+			INIReadInt(L"overlay", innerName+L"_indi_pos_y", CONFIG_NAME_DESIGN),
+			300, 300);
+		
+		LOG_VERBOSE((L"Object Indicator(" + innerName + L"): Loading done").c_str());
 	}
 
 	virtual ~SmiteIgniteIndicator(void){
@@ -63,10 +63,11 @@ public:
 		
 		wchar_t istr[30];
 		_itow_s(flat+perlvl*(*playerLevel), istr, 10);
-
-		font->DrawText(NULL, labelName.c_str(), -1, &labelCoords, DT_NOCLIP, labelFontColor);
+		if(showLabel)
+			font->DrawText(NULL, labelName.c_str(), -1, &labelCoords, DT_NOCLIP, labelFontColor);
 		font->DrawText(NULL, istr, -1, &indiCoords, DT_NOCLIP, indiFontColor);
 	}
+	
 	void PrepareRender(PDIRECT3DDEVICE9 pDevice){
 		//Create DirectX objects
 		D3DXCreateFont(pDevice, indiFontSize, 0, indiFontWeight, 1, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, indiFontName.c_str(), &font);
