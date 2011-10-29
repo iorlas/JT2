@@ -19,7 +19,7 @@ class SmiteIgniteIndicator : public JungleTime::IRenderableObject
 public:
 	SmiteIgniteIndicator(wstring innerName, int flat, int perlvl)
 		: innerName(innerName), flat(flat), perlvl(perlvl){
-		LOG_VERBOSE((L"Object Indicator: Loading " + innerName).c_str());
+		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"loading...");
 
 		/************************************************************************/
 		/* OVERLAY                                                              */
@@ -44,43 +44,56 @@ public:
 			INIReadInt(L"overlay", innerName+L"_indi_pos_y", CONFIG_NAME_DESIGN),
 			300, 300);
 		
-		LOG_VERBOSE((L"Object Indicator(" + innerName + L"): Loading done").c_str());
+		LOG_VERBOSE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"loaded");
 	}
 
 	virtual ~SmiteIgniteIndicator(void){
-		LOG_VERBOSE((L"Object Indicator(" + innerName + L"): unloading").c_str());
+		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"unloading...");	
+		
 		//Release resources only if application loop is alive, we dont need to freeze application in the process list
 		if(!IS_DX_LOOP_DEAD)
 			font->Release();
-		LOG_VERBOSE((L"Object Indicator(" + innerName + L"): unloaded").c_str());
+
+		LOG_VERBOSE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"unloaded");	
 	}
 
 	void Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs){
+		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"drawing");
 		if(!playerLevel)
 			TryToInitPointers();
 
 		//If we still cannot find needed pointers - we have nothing to render...
-		if(!playerLevel)
+		if(!playerLevel){
+			LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"pointers still not available");
 			return;
+		}
 		
 		wchar_t istr[30];
 		_itow_s(flat+perlvl*(*playerLevel), istr, 10);
 		if(showLabel)
 			font->DrawText(NULL, labelName.c_str(), -1, &labelCoords, DT_NOCLIP, labelFontColor);
 		font->DrawText(NULL, istr, -1, &indiCoords, DT_NOCLIP, indiFontColor);
+
+		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"draw is done");
 	}
 	
 	void PrepareRender(PDIRECT3DDEVICE9 pDevice){
+		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"preparing render");
+
 		//Create DirectX objects
 		D3DXCreateFont(pDevice, indiFontSize, 0, indiFontWeight, 1, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, indiFontName.c_str(), &font);
 		
 		//Find needed pointers
 		TryToInitPointers();
+
+		LOG_VERBOSE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"is ready to draw");
 	}
 
 private:
 	//Get pointers we can grab only in runtime, after some special in-game events
 	void TryToInitPointers(){
+		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"trying to find needed pointers");
+		
 		DWORD res = *((DWORD *)LOL_MEM_PLAYER_LEVEL_PTR);
 		if(!res)
 			return;
@@ -90,7 +103,8 @@ private:
 			return;
 		res += LOL_MEM_PLAYER_LEVEL_OFFSET2;
 		playerLevel = (int*)res;
-		LOG_VERBOSE((L"Object Indicator(" + innerName + L"): pointers found").c_str());
+		
+		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"all pointers are found");
 	}
 
 	//In-game pointers

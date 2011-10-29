@@ -6,16 +6,18 @@ LOG_DECLARE;
 BOOL WINAPI DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpvReserved){
 	DisableThreadLibraryCalls(hModule);
     if(dwReason == DLL_PROCESS_ATTACH){
-		LOG_INIT("jt2.log");
-		LOG_VERBOSE(L"* DLL Attach - in process");
+    	int res;
+		LOG_INIT("jt2");
+		LOG_DEBUG_MF(L"main.cpp", L"DLL", L"Attach", L"in process...");
 		JungleTime::Core::singleton = new JungleTime::Core();
-		LOG_VERBOSE(L"* DLL Attach - complete, init Core");
-		return JungleTime::Core::singleton->Init();
+		res = JungleTime::Core::singleton->Init();
+		LOG_VERBOSE_MF(L"main.cpp", L"DLL", L"Attach", L"complete");
+		return res;
     }
     else if(dwReason == DLL_PROCESS_DETACH){
-		LOG_VERBOSE(L"* DLL Detach - in process");
+    	LOG_DEBUG_MF(L"main.cpp", L"DLL", L"Detach", L"in progress...");
 		delete JungleTime::Core::singleton;
-		LOG_VERBOSE(L"* DLL Detach - done");
+		LOG_VERBOSE_MF(L"main.cpp", L"DLL", L"Detach", L"complete");
     }
     return TRUE;
 }

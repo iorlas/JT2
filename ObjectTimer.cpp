@@ -4,13 +4,13 @@ wstring INIReadStr(wstring cat, wstring name, wstring fileName){
 	WCHAR buffer[1024];
 	int res = GetPrivateProfileString(cat.c_str(), name.c_str(), L"NONE_STR", buffer, -1, fileName.c_str());
 	if(res == -2 || res == -3){
-		LOG_VERBOSE((L"INI Loader: cannot load string " + cat + L"." + name + L": buffer too small").c_str());
+		LOG_WARNING_MF(L"ObjectTimer.cpp", fileName.c_str(), (cat + L"." + name).c_str(), L"buffer too small");
 		return L"ERR1";
 	}
 	if(res == -1){
 		res = GetLastError();
 		if(res == 0x2){
-			LOG_VERBOSE((L"INI Loader: cannot load string " + cat + L"." + name + L": config file not found").c_str());
+			LOG_WARNING_MF(L"ObjectTimer.cpp", L"INIReader", fileName.c_str(), L"config file not found");
 			return L"ERR404";
 		}
 	}
@@ -20,7 +20,7 @@ wstring INIReadStr(wstring cat, wstring name, wstring fileName){
 int INIReadInt(wstring cat, wstring name, wstring fileName){
 	int res = GetPrivateProfileInt(cat.c_str(), name.c_str(), -1, fileName.c_str());
 	if(GetLastError() == 0x2)
-		LOG_VERBOSE((L"INI Loader: cannot load int " + cat + L"." + name + L": config file not found").c_str());
+		LOG_WARNING_MF(L"ObjectTimer.cpp", L"INIReader", fileName.c_str(), L"config file not found");
 	return res;
 }
 
@@ -29,7 +29,7 @@ namespace JungleTime{
 ObjectTimer::ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objectMemoryPattern)
 	: innerName(innerName), cooldown(cooldown), spawnAt(spawnAt), objectMemoryPattern(objectMemoryPattern),
 	killedAt(0), isAlivePtr(0), isAliveBefore(false){
-	LOG_VERBOSE((L"Object Timers: Loading " + innerName).c_str());
+	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"loading...");
 
 	/************************************************************************/
 	/* OVERLAY                                                              */
@@ -67,11 +67,13 @@ ObjectTimer::ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objec
 		config.get<int>("overlay."+innerNameStr+"_announce_pos_x"),
 		config.get<int>("overlay."+innerNameStr+"_announce_pos_y"),
 		300, 300);*/
-
-	LOG_VERBOSE((L"Object Timers(" + innerName + L"): Loading done").c_str());
+	
+	LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"loaded");
 }
 
 void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs){
+	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"drawing");
+
 	//Every 10 frames we'll try to find net-objects
 	// !isAlivePtr - if this pointer isn't null, it means we already have all pointers
 	// (curTimeSecs > spawnAt-5) - we dont need to check for object before it CAN BE spawned. So 3 is a difference.
@@ -87,8 +89,10 @@ void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs
 	//If object isn't spawned yet, we need to display time, left to first spawn
 	if(TIMER_IS_ALIVE){
 		//Now it's alive!
-		if(!isAliveBefore)
+		if(!isAliveBefore){
 			isAliveBefore = true;
+			LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"is alive!");
+		}
 
 		//0xFFB5E61D
 		timerFont->DrawText(NULL, TIMER_LABEL_ALIVE, -1, &timerCoords, DT_NOCLIP, timerFontAliveColor);
@@ -97,6 +101,7 @@ void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs
 		if(isAliveBefore){
 			killedAt = curTimeSecs;
 			isAliveBefore = false;
+			LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"is dead!");
 		}
 		
 		//Get time to [next]spawn
@@ -117,19 +122,28 @@ void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs
 			//0xFFFFFFFF
 			timerFont->DrawText(NULL, istr, -1, &timerCoords, DT_NOCLIP, timerFontColor);
 	}
+
+	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"draw is done");
 }
 
 void ObjectTimer::PrepareRender(PDIRECT3DDEVICE9 pDevice){
+	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"preparing render");
+
 	//Create DirectX objects
 	D3DXCreateFont(pDevice, timerFontSize, 0, timerFontWeight, 1, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, timerFontName.c_str(), &timerFont);
 
 	//Gather pointers to needed related information from the game
 	TryToInitNetobjectPointers();
+
+	LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"is ready to draw");
 }
 
 void ObjectTimer::TryToInitNetobjectPointers(){
 	if(isAlivePtr)
 		return;
+	
+	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"trying to find needed pointers");
+
 	DWORD arr = *((DWORD*)(LOL_MEM_NETOBJECTS_ARRAY_PTR));
 	DWORD obj = 0;
 	for(int i = 0; i < LOL_MEM_NETOBJECTS_MAX; i++){
@@ -147,27 +161,29 @@ void ObjectTimer::TryToInitNetobjectPointers(){
 
 		//Check for memory object pattern(see defines.h)
 		if (*memSrc == objectMemoryPattern){
-			LOG_VERBOSE((L"Object Timers(" + innerName + L"): network object found").c_str());
+			LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"network object found");
 
 			//Update our saves pointers
 			isAlivePtr = (bool *)(obj+LOL_MEM_NETOBJECT_IS_ALIVE_OFFSET);
 			if(!isAlivePtr){
-				LOG_VERBOSE((L"Object Timers(" + innerName + L"): cannot find isAlive flag. Memory corrupted? Different game version? Humster in the PC?").c_str());
+				LOG_ERROR_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"cannot find isAlive flag. Memory corrupted? Different game version? Humster in the PC?");
 				continue;
 			}
 
 		}
 	}
+
+	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"all pointers are found");
 }
 
 ObjectTimer::~ObjectTimer(void){
-	LOG_VERBOSE((L"Object Timers(" + innerName + L"): unloading").c_str());
+	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"unloading...");	
 
 	//Release resources only if application loop is alive, we dont need to freeze application in the process list
 	if(!IS_DX_LOOP_DEAD)
 		timerFont->Release();
-
-	LOG_VERBOSE((L"Object Timers(" + innerName + L"): unloaded").c_str());
+	
+	LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"unloaded");	
 }
 
 }

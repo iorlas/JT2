@@ -73,7 +73,7 @@ void Core::OnDXInitiated(void){
 }
 void Core::OnDXEndScene(LPDIRECT3DDEVICE9 pDevice){
 	//Increase special frames counter
-	framesCounter %= 100; //Overflow...
+	framesCounter %= 10000; //Overflow...
 	framesCounter++;
 
 	//Get current in-game time

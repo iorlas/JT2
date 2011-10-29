@@ -5,80 +5,92 @@
 #include <windows.h>
 #include <time.h>
 
-//Yep, im noob, ololo
+//Yep, im noob, ololo, but this is a one way i know how to convert __FILE__ to wchar string
 #define WIDEN2(x) L##x
 #define WIDEN(x) WIDEN2(x)
 #define __WFILE__ WIDEN(__FILE__)
+#define __WFUNCTION__ WIDEN(__FUNCTION__)
 
-//must be put in global scope and used once in all files
+//put it anywhere, better right before LOG_INIT
 #define LOG_DECLARE Log __log;
-//used in any file need to access the log files, except the file that has LOG_DECLARE statment
+//use in global header or in any needed part of code
 #define LOG_USE extern Log __log;
 //init log files, called once in program initialization
-#define LOG_INIT(fileName) do{if(fileName!= NULL)__log.init(fileName); else printf("error init log file %s", fileName);}while(0);
+#define LOG_INIT(fileName) __log.Init(fileName);
 
-//here are the different levels of logging
-#define LOG_VERBOSE(msg) __log.write(L"verbose", msg, __WFILE__, __LINE__); //detailed info
-#define LOG_MSG(msg) __log.write(L"msg", msg, __WFILE__, __LINE__); //brief info
-#define LOG_WARN(msg) __log.write(L"warn", msg, __WFILE__, __LINE__); //warning
-#define LOG_ERR(msg) __log.write(L"error", msg, __WFILE__, __LINE__); //error
-#define LOG_FATAL(msg) __log.write(L"fatal", msg, __WFILE__, __LINE__); //fatal error
+/* Warning!!! __FILE__ can be file name with a full path to file.
+ * Yeah, i know about special flag, but in headers it CANNOT be just a file name. "By design" (c) MS
+ * So we need to enter it manually. MF stands for Manual __FILE__.
+ */
 
-class Log
-{
+#define _LOG_MSG_MF(fileName, pType, objStr, childObjStr, msg) __log.WriteStr(##pType, __WFUNCTION__, ##fileName, __LINE__, ##objStr, ##childObjStr, ##msg)
+#ifdef _DEBUG
+#define LOG_DEBUG_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"DEBUG", ##objStr, ##childObjStr, ##msg) //add to code only in debug version. DEEP debug messages. A lot of 'em.
+#else
+#define LOG_DEBUG_MF(fileName, objStr, childObjStr, msg) ;
+#endif
+	
+#define LOG_VERBOSE_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"VERBOSE", ##objStr, ##childObjStr, ##msg) //common messages for a general things.
+#define LOG_WARNING_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"WARNING", ##objStr, ##childObjStr, ##msg) //error in anything. But we still can display something.
+#define LOG_ERROR_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"ERROR", ##objStr, ##childObjStr, ##msg) //real errors, we cannot continue use Jungle Timer.
+
+class Log{
+private:
 	FILE *fp;
 	bool logOk;
 	HANDLE mutex;
 public:
-	Log() {
+	Log(){
 		fp = NULL;
 	}
-	~Log() {
-		close();
+
+	~Log(){
+		Close();
 	}
 
 	//Hide deprecation warning, it's just a trashy output...
 	#pragma warning(push)
 	#pragma warning(disable: 4996)
-	void init(char *pfileName) {
-		if(pfileName != NULL) {
-			fp = fopen(pfileName, "a+");
+	void Init(char *pfileName){
+		if(pfileName != NULL){
+			//Add date to a file name
+			SYSTEMTIME lt;
+			GetLocalTime(&lt);
+			char buffLogName[50];
+	  		sprintf(buffLogName, "%s_%02dm%02dd%02dy%s", pfileName, lt.wMonth, lt.wDay, lt.wYear, ".log");
+
+	  		//Finally, open the file
+			fp = fopen(buffLogName, "a+");
 			if(fp != NULL) fseek(fp, 0, SEEK_END);
 		}
 		mutex = CreateMutex(NULL, FALSE, L"LogFileMutex");
 	}
 	#pragma warning(pop)
 
-	void close() {
-		if(fp != NULL) {
-			fwprintf(fp, L"****************End of log****************\n");
+	void Close(){
+		if(fp != NULL){
+			fwprintf(fp, L"*****************************End of log*****************************\n");
 			fclose(fp);
 		}
 		fp = NULL;
 		CloseHandle(mutex);
 	}
 
-	void write(LPCWSTR pType, LPCWSTR pMsg, LPCWSTR pFileName, int lineNo) {
-		DWORD dwWaitResult = 0;
-		while(dwWaitResult != WAIT_OBJECT_0) {
-			dwWaitResult = WaitForSingleObject(mutex, 1);
-		}
-		if(fp != NULL) {
-			fwprintf(fp, L"%s\t%lld\t%s\t%d\t%s\n", pType, time(NULL), pFileName, lineNo, pMsg);
-			fflush(fp);
-		}
-		ReleaseMutex(mutex);
-	}
+	void WriteStr(LPCWSTR pType, LPCWSTR pFuncName, LPCWSTR pFileName, int lineNo, LPCWSTR objStr, LPCWSTR childObjStr, LPCWSTR msg){
+		if(fp == NULL)
+			return;
+		
+		SYSTEMTIME lt;
+		GetLocalTime(&lt);
 
-	void write_ptr(LPCWSTR pType, LPCWSTR pMsg, LPCWSTR pFileName, int lineNo, DWORD ptr) {
 		DWORD dwWaitResult = 0;
-		while(dwWaitResult != WAIT_OBJECT_0) {
+		while(dwWaitResult != WAIT_OBJECT_0){
 			dwWaitResult = WaitForSingleObject(mutex, 1);
 		}
-		if(fp != NULL) {
-			fwprintf(fp, L"%s\t%lld\t%s\t%d\t%s - %p\n", pType, time(NULL), pFileName, lineNo, pMsg, ptr);
-			fflush(fp);
-		}
+
+		fwprintf(fp, L"%s <%02d:%02d:%02d.%03d> %s at [%s:%d] %s.%s >> %s", pType, lt.wHour, lt.wMinute, lt.wSecond, lt.wMilliseconds, pFuncName, pFileName, lineNo, objStr, childObjStr, msg);
+		fflush(fp);
+
 		ReleaseMutex(mutex);
 	}
 };
