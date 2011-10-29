@@ -6,7 +6,7 @@
 
 #define TIMER_IS_ALIVE (isAlivePtr? *isAlivePtr: false)
 #define TIMER_IS_NOT_SPAWNED (!isAlivePtr)
-#define TIMER_LABEL_ALIVE L"ALIVE!"
+#define TIMER_LABEL_ALIVE L"ALIVE"
 
 namespace JungleTime{
 

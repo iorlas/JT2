@@ -23,24 +23,25 @@
  * So we need to enter it manually. MF stands for Manual __FILE__.
  */
 
+//EF stands for Each Frame. This mode needs for debugging of the some things, like render cycle.
+//#define JT_EFDEBUG
+#define JT_DEBUG
+
 #define _LOG_MSG_MF(fileName, pType, objStr, childObjStr, msg) __log.WriteStr(##pType, __WFUNCTION__, ##fileName, __LINE__, ##objStr, ##childObjStr, ##msg)
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(JT_DEBUG)
 #define LOG_DEBUG_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"DEBUG", ##objStr, ##childObjStr, ##msg) //add to code only in debug version. DEEP debug messages. A lot of 'em.
 #else
 #define LOG_DEBUG_MF(fileName, objStr, childObjStr, msg) ;
 #endif
 
-//EF stands for Each Frame. This mode needs for debugging of the some things, like render cycle.
-//#define _EFDEBUG
-#if defined(_DEBUG) && defined(_EFDEBUG)
-#define LOG_DEBUG_EF_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"EFDEBUG", ##objStr, ##childObjStr, ##msg) //add to code only in debug version. DEEP debug messages. A lot of 'em.
+#if (defined(_DEBUG) || defined(JT_DEBUG)) && defined(JT_EFDEBUG)
+#define LOG_DEBUG_EF_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"EFDEB", ##objStr, ##childObjStr, ##msg) //add to code only in debug version. DEEP debug messages. A lot of 'em.
 #else
 #define LOG_DEBUG_EF_MF(fileName, objStr, childObjStr, msg) ;
 #endif
 
-	
-#define LOG_VERBOSE_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"VERBOSE", ##objStr, ##childObjStr, ##msg) //common messages for a general things.
-#define LOG_WARNING_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"WARNING", ##objStr, ##childObjStr, ##msg) //error in anything. But we still can display something.
+#define LOG_VERBOSE_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"VERBO", ##objStr, ##childObjStr, ##msg) //common messages for a general things.
+#define LOG_WARNING_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"WARNI", ##objStr, ##childObjStr, ##msg) //error in anything. But we still can display something.
 #define LOG_ERROR_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"ERROR", ##objStr, ##childObjStr, ##msg) //real errors, we cannot continue use Jungle Timer.
 
 class Log{
@@ -97,7 +98,7 @@ public:
 			dwWaitResult = WaitForSingleObject(mutex, 1);
 		}
 
-		fwprintf(fp, L"%s\t<%02d:%02d:%02d.%03d> %s at [%s:%d]\t\t%s.%s >>\t%s\n", pType, lt.wHour, lt.wMinute, lt.wSecond, lt.wMilliseconds, pFuncName, pFileName, lineNo, objStr, childObjStr, msg);
+		fwprintf(fp, L"%s <%02d:%02d:%02d.%03d> %s at [%s:%d]\t%s.%s >> %s\n", pType, lt.wHour, lt.wMinute, lt.wSecond, lt.wMilliseconds, pFuncName, pFileName, lineNo, objStr, childObjStr, msg);
 		fflush(fp);
 
 		ReleaseMutex(mutex);
