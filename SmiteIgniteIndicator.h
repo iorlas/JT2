@@ -58,13 +58,21 @@ public:
 	}
 
 	void Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs){
-		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"drawing");
-		if(!playerLevel)
+		LOG_DEBUG_EF_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"drawing");
+
+		if(!playerLevel && frameNum%30 == 0){
 			TryToInitPointers();
+
+			//But if still not available...
+			#ifdef _DEBUG
+			if(!playerLevel)
+				LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"pointers still not available");
+			#endif
+		}
 
 		//If we still cannot find needed pointers - we have nothing to render...
 		if(!playerLevel){
-			LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"pointers still not available");
+			LOG_DEBUG_EF_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"pointers still not available");
 			return;
 		}
 		
@@ -74,7 +82,7 @@ public:
 			font->DrawText(NULL, labelName.c_str(), -1, &labelCoords, DT_NOCLIP, labelFontColor);
 		font->DrawText(NULL, istr, -1, &indiCoords, DT_NOCLIP, indiFontColor);
 
-		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"draw is done");
+		LOG_DEBUG_EF_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"draw is done");
 	}
 	
 	void PrepareRender(PDIRECT3DDEVICE9 pDevice){

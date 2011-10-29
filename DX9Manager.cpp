@@ -96,13 +96,13 @@ DWORD WINAPI DX9Manager::MainHookDX9(LPVOID Param){
 }
 
 void DX9Manager::OnDXFirstFrame(LPDIRECT3DDEVICE9 pDevice){
-	LOG_VERBOSE_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"OnDXFirstFrame", L"On First Frame event unhooked!");
+	LOG_WARNING_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"OnDXFirstFrame", L"On First Frame event unhooked!");
 }
 void DX9Manager::OnDXInitiated(void){
-	LOG_VERBOSE_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"OnDXInitiated", L"On Init event unhooked!");
+	LOG_WARNING_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"OnDXInitiated", L"On Init event unhooked!");
 }
 void DX9Manager::OnDXEndScene(LPDIRECT3DDEVICE9 pDevice){
-	LOG_VERBOSE_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"OnDXEndScene", L"On End Scene event unhooked!");
+	LOG_WARNING_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"OnDXEndScene", L"On End Scene event unhooked!");
 }
 
 }

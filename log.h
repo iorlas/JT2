@@ -29,6 +29,15 @@
 #else
 #define LOG_DEBUG_MF(fileName, objStr, childObjStr, msg) ;
 #endif
+
+//EF stands for Each Frame. This mode needs for debugging of the some things, like render cycle.
+//#define _EFDEBUG
+#if defined(_DEBUG) && defined(_EFDEBUG)
+#define LOG_DEBUG_EF_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"EFDEBUG", ##objStr, ##childObjStr, ##msg) //add to code only in debug version. DEEP debug messages. A lot of 'em.
+#else
+#define LOG_DEBUG_EF_MF(fileName, objStr, childObjStr, msg) ;
+#endif
+
 	
 #define LOG_VERBOSE_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"VERBOSE", ##objStr, ##childObjStr, ##msg) //common messages for a general things.
 #define LOG_WARNING_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"WARNING", ##objStr, ##childObjStr, ##msg) //error in anything. But we still can display something.
@@ -88,7 +97,7 @@ public:
 			dwWaitResult = WaitForSingleObject(mutex, 1);
 		}
 
-		fwprintf(fp, L"%s <%02d:%02d:%02d.%03d> %s at [%s:%d] %s.%s >> %s", pType, lt.wHour, lt.wMinute, lt.wSecond, lt.wMilliseconds, pFuncName, pFileName, lineNo, objStr, childObjStr, msg);
+		fwprintf(fp, L"%s\t<%02d:%02d:%02d.%03d> %s at [%s:%d]\t\t%s.%s >>\t%s\n", pType, lt.wHour, lt.wMinute, lt.wSecond, lt.wMilliseconds, pFuncName, pFileName, lineNo, objStr, childObjStr, msg);
 		fflush(fp);
 
 		ReleaseMutex(mutex);

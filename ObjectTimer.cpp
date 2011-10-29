@@ -72,7 +72,7 @@ ObjectTimer::ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objec
 }
 
 void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs){
-	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"drawing");
+	LOG_DEBUG_EF_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"drawing");
 
 	//Every 10 frames we'll try to find net-objects
 	// !isAlivePtr - if this pointer isn't null, it means we already have all pointers
@@ -123,7 +123,7 @@ void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs
 			timerFont->DrawText(NULL, istr, -1, &timerCoords, DT_NOCLIP, timerFontColor);
 	}
 
-	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"draw is done");
+	LOG_DEBUG_EF_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"draw is done");
 }
 
 void ObjectTimer::PrepareRender(PDIRECT3DDEVICE9 pDevice){
