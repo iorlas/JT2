@@ -1,59 +1,63 @@
 #include "ObjectTimer.h"
 
-wstring INIReadStr(wstring cat, wstring name, wstring fileName){
-	WCHAR buffer[1024];
-	int res = GetPrivateProfileString(cat.c_str(), name.c_str(), L"NONE_STR", buffer, -1, fileName.c_str());
+LPCWSTR INIReadStr(LPCWSTR cat, LPCWSTR name, LPCWSTR fileName){
+	wchar_t *buff = new wchar_t[255];
+	memset(buff, 0x00, 255);
+	int res = GetPrivateProfileString(cat, name, L"NONE_STR", buff, 255, fileName);
 	if(res == -2 || res == -3){
-		LOG_WARNING_MF(L"ObjectTimer.cpp", fileName.c_str(), (cat + L"." + name).c_str(), L"buffer too small");
+		LOG_WARNING_MF(L"ObjectTimer.cpp", cat, name, L"INI Reader error: buffer too small");
+		delete buff;
 		return L"ERR1";
 	}
 	if(res == -1){
 		res = GetLastError();
 		if(res == 0x2){
-			LOG_WARNING_MF(L"ObjectTimer.cpp", L"INIReader", fileName.c_str(), L"config file not found");
+			LOG_ERROR_MF(L"ObjectTimer.cpp", L"INIReader", fileName, L"config file not found");
+			delete buff;
 			return L"ERR404";
 		}
 	}
-	return wstring(buffer);
+	return buff;
 }
 
-int INIReadInt(wstring cat, wstring name, wstring fileName){
-	int res = GetPrivateProfileInt(cat.c_str(), name.c_str(), -1, fileName.c_str());
-	if(GetLastError() == 0x2)
-		LOG_WARNING_MF(L"ObjectTimer.cpp", L"INIReader", fileName.c_str(), L"config file not found");
+int INIReadInt(LPCWSTR cat, LPCWSTR name, LPCWSTR fileName){
+	int res = GetPrivateProfileInt(cat, name, -1, fileName);
+	if(res == -1 && GetLastError() == 0x2)
+		LOG_ERROR_MF(L"ObjectTimer.cpp", L"INIReader", fileName, L"config file not found");
 	return res;
 }
 
 namespace JungleTime{
 
-ObjectTimer::ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objectMemoryPattern)
+ObjectTimer::ObjectTimer(LPCWSTR innerName, int cooldown, int spawnAt, int objectMemoryPattern)
 	: innerName(innerName), cooldown(cooldown), spawnAt(spawnAt), objectMemoryPattern(objectMemoryPattern),
-	killedAt(0), isAlivePtr(0), isAliveBefore(false){
-	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"loading...");
+	killedAt(0), isAlivePtr(0), isAliveBefore(false),
+	timerFont(0), resourcesAreReady(false){
+	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"loading...");
 
 	/************************************************************************/
 	/* OVERLAY                                                              */
 	/************************************************************************/
 	//Label
-	labelName = INIReadStr(L"overlay", innerName+L"_label_name", CONFIG_NAME_DESIGN);
-	showLabel = !!INIReadInt(L"overlay", innerName+L"_show_label", CONFIG_NAME_DESIGN);
+	labelName = INIReadStr(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_label_name"), CONFIG_NAME_DESIGN);
+	showLabel = !!INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_show_label"), CONFIG_NAME_DESIGN);
 	SetRect(&labelCoords,
-		INIReadInt(L"overlay", innerName+L"_label_pos_x", CONFIG_NAME_DESIGN),
-		INIReadInt(L"overlay", innerName+L"_label_pos_y", CONFIG_NAME_DESIGN),
+		INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_label_pos_x"), CONFIG_NAME_DESIGN),
+		INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_label_pos_y"), CONFIG_NAME_DESIGN),
 		300, 300);
 
 	//Timer
-	timerFontSize = INIReadInt(L"overlay", innerName+L"_timer_font_size", CONFIG_NAME_DESIGN);
-	timerFontWeight = INIReadInt(L"overlay", innerName+L"_timer_font_weight", CONFIG_NAME_DESIGN);
-	timerFontName = INIReadStr(L"overlay", innerName+L"_timer_font_name", CONFIG_NAME_DESIGN);
-	timerFontColor = INIReadInt(L"overlay", innerName+L"_timer_font_color", CONFIG_NAME_DESIGN);
-	timerFontRedlineColor = INIReadInt(L"overlay", innerName+L"_timer_font_redline_color", CONFIG_NAME_DESIGN);
-	timerFontAliveColor = INIReadInt(L"overlay", innerName+L"_timer_font_alive_color", CONFIG_NAME_DESIGN);
+	timerFontSize = INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_timer_font_size"), CONFIG_NAME_DESIGN);
+	timerFontWeight = INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_timer_font_weight"), CONFIG_NAME_DESIGN);
+	timerFontName = INIReadStr(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_timer_font_name"), CONFIG_NAME_DESIGN);
+	timerFontColor = INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_timer_font_color"), CONFIG_NAME_DESIGN);
+	timerFontRedlineColor = INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_timer_font_redline_color"), CONFIG_NAME_DESIGN);
+	timerFontAliveColor = INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_timer_font_alive_color"), CONFIG_NAME_DESIGN);
 
-	redLine = INIReadInt(L"overlay", innerName+L"_red_line", CONFIG_NAME_DESIGN);
+	redLine = INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_red_line"), CONFIG_NAME_DESIGN);
 	SetRect(&timerCoords,
-		INIReadInt(L"overlay", innerName+L"_timer_pos_x", CONFIG_NAME_DESIGN),
-		INIReadInt(L"overlay", innerName+L"_timer_pos_y", CONFIG_NAME_DESIGN),
+		INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_timer_pos_x"), CONFIG_NAME_DESIGN),
+		INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_timer_pos_y"), CONFIG_NAME_DESIGN),
 		300, 300);
 
 	//Announce
@@ -68,11 +72,21 @@ ObjectTimer::ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objec
 		config.get<int>("overlay."+innerNameStr+"_announce_pos_y"),
 		300, 300);*/
 	
-	LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"loaded");
+	LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"loaded");
 }
 
 void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs){
-	LOG_DEBUG_EF_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"drawing");
+	if(!resourcesAreReady){
+		LOG_WARNING_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"resources was not ready in the real application way, trying to create it by myself...");
+		PrepareResources(pDevice);
+		if(!resourcesAreReady){
+			LOG_WARNING_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"but i cant create resources, waiting 500 ms");
+			Sleep(500);
+			return;
+		}
+	}
+
+	LOG_DEBUG_EF_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"drawing");
 
 	//Every 10 frames we'll try to find net-objects
 	// !isAlivePtr - if this pointer isn't null, it means we already have all pointers
@@ -82,16 +96,17 @@ void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs
 		TryToInitNetobjectPointers();
 
 	//Show label only if we need
-	if(showLabel)
+	if(showLabel){
 		//0xFFFFFFFF
-		timerFont->DrawText(NULL, labelName.c_str(), -1, &labelCoords, DT_NOCLIP, timerFontColor);
-	
+		timerFont->DrawText(NULL, labelName, -1, &labelCoords, DT_NOCLIP, timerFontColor);
+	}
+
 	//If object isn't spawned yet, we need to display time, left to first spawn
 	if(TIMER_IS_ALIVE){
 		//Now it's alive!
 		if(!isAliveBefore){
 			isAliveBefore = true;
-			LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"is alive!");
+			LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"is alive!");
 		}
 
 		//0xFFB5E61D
@@ -101,7 +116,7 @@ void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs
 		if(isAliveBefore){
 			killedAt = curTimeSecs;
 			isAliveBefore = false;
-			LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"is dead!");
+			LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"is dead!");
 		}
 		
 		//Get time to [next]spawn
@@ -123,26 +138,41 @@ void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs
 			timerFont->DrawText(NULL, istr, -1, &timerCoords, DT_NOCLIP, timerFontColor);
 	}
 
-	LOG_DEBUG_EF_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"draw is done");
+	LOG_DEBUG_EF_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"draw is done");
 }
 
-void ObjectTimer::PrepareRender(PDIRECT3DDEVICE9 pDevice){
-	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"preparing render");
-
-	//Create DirectX objects
-	D3DXCreateFont(pDevice, timerFontSize, 0, timerFontWeight, 1, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, timerFontName.c_str(), &timerFont);
-
+void ObjectTimer::Init(PDIRECT3DDEVICE9 pDevice){
+	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"preparing...");
 	//Gather pointers to needed related information from the game
 	TryToInitNetobjectPointers();
+	LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"is ready");
+}
+void ObjectTimer::PrepareResources(PDIRECT3DDEVICE9 pDevice){
+	//Create DirectX objects
+	HRESULT res = D3DXCreateFont(pDevice, timerFontSize, 0, timerFontWeight, 1, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, timerFontName, &timerFont);
+	if(res != S_OK){
+		LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"cannot create resources");
+		return;
+	}
+	resourcesAreReady = true;
+	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"resources are ready");
+}
 
-	LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"is ready to draw");
+void ObjectTimer::OnLostDevice(){
+	if(timerFont)
+		timerFont->OnLostDevice();
+}
+
+void ObjectTimer::OnResetDevice(PDIRECT3DDEVICE9 pDevice){
+	if(timerFont)
+		timerFont->OnResetDevice();
 }
 
 void ObjectTimer::TryToInitNetobjectPointers(){
 	if(isAlivePtr)
 		return;
 	
-	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"trying to find needed pointers");
+	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"trying to find needed pointers");
 
 	DWORD arr = *((DWORD*)(LOL_MEM_NETOBJECTS_ARRAY_PTR));
 	DWORD obj = 0;
@@ -161,29 +191,33 @@ void ObjectTimer::TryToInitNetobjectPointers(){
 
 		//Check for memory object pattern(see defines.h)
 		if (*memSrc == objectMemoryPattern){
-			LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"network object found");
+			LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"network object found");
 
 			//Update our saves pointers
 			isAlivePtr = (bool *)(obj+LOL_MEM_NETOBJECT_IS_ALIVE_OFFSET);
 			if(!isAlivePtr){
-				LOG_ERROR_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"cannot find isAlive flag. Memory corrupted? Different game version? Humster in the PC?");
+				LOG_ERROR_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"cannot find isAlive flag. Memory corrupted? Different game version? Humster in the PC?");
 				continue;
 			}
-
+			LOG_VERBOSE_PTR_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"network object verified", obj);
 		}
 	}
 
-	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"all pointers are found");
+	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"all pointers are found");
 }
 
 ObjectTimer::~ObjectTimer(void){
-	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"unloading...");	
+	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"unloading...");
+
+	//Delete allocated mem
+	delete labelName;
+	delete timerFontName;
 
 	//Release resources only if application loop is alive, we dont need to freeze application in the process list
-	if(!IS_DX_LOOP_DEAD)
+	if(timerFont != NULL && !IS_DX_LOOP_DEAD)
 		timerFont->Release();
-	
-	LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName.c_str(), L"unloaded");	
+	resourcesAreReady = false;
+	LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"unloaded");	
 }
 
 }

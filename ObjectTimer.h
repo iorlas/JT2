@@ -4,7 +4,7 @@
 
 #include "IRenderable.h"
 
-#define TIMER_IS_ALIVE (isAlivePtr? *isAlivePtr: false)
+#define TIMER_IS_ALIVE (!!isAlivePtr? *isAlivePtr: false)
 #define TIMER_IS_NOT_SPAWNED (!isAlivePtr)
 #define TIMER_LABEL_ALIVE L"ALIVE"
 
@@ -13,11 +13,16 @@ namespace JungleTime{
 class ObjectTimer : public JungleTime::IRenderableObject
 {
 public:
-	ObjectTimer(wstring innerName, int cooldown, int spawnAt, int objectMemoryPattern);
+	ObjectTimer(LPCWSTR innerName, int cooldown, int spawnAt, int objectMemoryPattern);
 	virtual ~ObjectTimer(void);
 
 	void Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs);
-	void PrepareRender(PDIRECT3DDEVICE9 pDevice);
+	void Init(PDIRECT3DDEVICE9 pDevice);
+
+	//DX resources managment
+	void PrepareResources(PDIRECT3DDEVICE9 pDevice);
+	void OnLostDevice();
+	void OnResetDevice(PDIRECT3DDEVICE9 pDevice);
 
 	//Get pointers we can grab only in runtime, after some special in-game events
 	void TryToInitNetobjectPointers();
@@ -30,7 +35,7 @@ public:
 	bool isAliveBefore;
 
 	//Name for config and logging
-	wstring innerName;
+	LPCWSTR innerName;
 	
 	int killedAt;
 	int cooldown;
@@ -40,7 +45,7 @@ public:
 	/*    OVERLAY SETTINGS                                                  */
 	/************************************************************************/
 	//Label
-	wstring labelName;
+	LPCWSTR labelName;
 	bool showLabel;
 	RECT labelCoords;
 	
@@ -49,7 +54,7 @@ public:
 	RECT timerCoords;
 	int timerFontSize;
 	int timerFontWeight;
-	wstring timerFontName;
+	LPCWSTR timerFontName;
 	DWORD timerFontColor;
 	DWORD timerFontRedlineColor;
 	DWORD timerFontAliveColor;
@@ -59,11 +64,12 @@ public:
 	RECT announceCoords;
 	int announceFontSize;
 	int announceFontWeight;
-	wstring announceFontName;
+	LPCWSTR announceFontName;
 	DWORD announceFontColor;
 
 	//Overlay fonts
 	LPD3DXFONT timerFont;
+	bool resourcesAreReady;
 };
 
 }

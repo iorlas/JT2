@@ -3,6 +3,7 @@
 #define WIN32_LEAN_AND_MEAN
 //General things
 #include <windows.h>
+#include <process.h>
 #include <mmsystem.h>
 #pragma comment(lib, "winmm.lib")
 #include <stdio.h>
@@ -41,7 +42,7 @@ LOG_USE;
 /************************************************************************/
 /*    OFFSETS AND DEFINES FOR MAP CHECKING                              */
 /************************************************************************/
-#define LOL_MEM_MAP_NAME_OFFSET 0x02BF272C
+#define LOL_MEM_MAP_NAME_OFFSET 0x02BF2B3C
 #define LOL_MAP_SUMMONERS_RIFT_NAME "Map1"
 #define LOL_MAP_SUMMONERS_RIFT_AUT_NAME "Map2"
 
@@ -77,12 +78,12 @@ LOG_USE;
 /************************************************************************/
 /*    IN-GAME TIME HELPERS AND POINTERS/OFFSETS                         */
 /************************************************************************/
-#define LOL_MEM_START_TIME_PTR 0x01BA1548
-#define LOL_MEM_CURRENT_TIME_STRUCT_PTR 0x00B42224
+#define LOL_MEM_START_TIME_PTR 0x01BA6088
+#define LOL_MEM_CURRENT_TIME_STRUCT_PTR 0x00B46858
 #define LOL_MEM_CURRENT_TIME_OFFSET 0x00000008
 #define LOL_MEM_GET_GAMETIME() ((ingameClockNow && ingameClockStart)? ((int)floor(*ingameClockNow - *ingameClockStart)) : 0)
 
-#define LOL_MEM_PLAYER_LEVEL_PTR 0x00B42344
+#define LOL_MEM_PLAYER_LEVEL_PTR 0x00B46974
 #define LOL_MEM_PLAYER_LEVEL_OFFSET1 0x000000DC
 #define LOL_MEM_PLAYER_LEVEL_OFFSET2 0x00000100
 
@@ -91,3 +92,5 @@ LOG_USE;
 /************************************************************************/
 #define CONFIG_NAME_DESIGN L"./jt2_design.ini" //Design of overlay
 #define CONFIG_NAME_USER L"./jt2_user.ini" //User configuration file
+
+#define INI_NAME_WITH_PREFIX(prefix, postfix) ((wstring(##prefix) + ##postfix).c_str())

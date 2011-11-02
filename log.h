@@ -23,11 +23,16 @@
  * So we need to enter it manually. MF stands for Manual __FILE__.
  */
 
+//OD stands for OutputDebug. Special debug output for MSVS. Can be handled using MSVS Output window or DebugView
+#define JT_ODDEBUG
 //EF stands for Each Frame. This mode needs for debugging of the some things, like render cycle.
-//#define JT_EFDEBUG
+#define JT_EFDEBUG
+//Just debug...
 #define JT_DEBUG
 
 #define _LOG_MSG_MF(fileName, pType, objStr, childObjStr, msg) __log.WriteStr(##pType, __WFUNCTION__, ##fileName, __LINE__, ##objStr, ##childObjStr, ##msg)
+#define _LOG_MSG_PTR_MF(fileName, pType, objStr, childObjStr, msg, ptr) __log.WritePtr(##pType, __WFUNCTION__, ##fileName, __LINE__, ##objStr, ##childObjStr, ##msg, ##ptr)
+
 #if defined(_DEBUG) || defined(JT_DEBUG)
 #define LOG_DEBUG_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"DEBUG", ##objStr, ##childObjStr, ##msg) //add to code only in debug version. DEEP debug messages. A lot of 'em.
 #else
@@ -43,6 +48,8 @@
 #define LOG_VERBOSE_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"VERBO", ##objStr, ##childObjStr, ##msg) //common messages for a general things.
 #define LOG_WARNING_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"WARNI", ##objStr, ##childObjStr, ##msg) //error in anything. But we still can display something.
 #define LOG_ERROR_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"ERROR", ##objStr, ##childObjStr, ##msg) //real errors, we cannot continue use Jungle Timer.
+
+#define LOG_VERBOSE_PTR_MF(fileName, objStr, childObjStr, msg, ptr) _LOG_MSG_PTR_MF(##fileName, L"VERBO", ##objStr, ##childObjStr, ##msg, ##ptr)
 
 class Log{
 private:
@@ -73,7 +80,7 @@ public:
 			fp = fopen(buffLogName, "a+");
 			if(fp != NULL) fseek(fp, 0, SEEK_END);
 		}
-		mutex = CreateMutex(NULL, FALSE, L"LogFileMutex");
+		mutex = CreateMutex(NULL, FALSE, L"JT211LogFileMutex");
 	}
 	#pragma warning(pop)
 
@@ -87,18 +94,64 @@ public:
 	}
 
 	void WriteStr(LPCWSTR pType, LPCWSTR pFuncName, LPCWSTR pFileName, int lineNo, LPCWSTR objStr, LPCWSTR childObjStr, LPCWSTR msg){
+		#ifdef JT_ODDEBUG
+		wchar_t buf[2048];
+		swprintf(buf, 2048, L"%s %s at [%s:%d]\t%s.%s > %s\n", pType, pFuncName, pFileName, lineNo, objStr, childObjStr, msg);
+		OutputDebugString(buf);
+		#endif
+
 		if(fp == NULL)
 			return;
-		
+
 		SYSTEMTIME lt;
 		GetLocalTime(&lt);
 
-		DWORD dwWaitResult = 0;
-		while(dwWaitResult != WAIT_OBJECT_0){
-			dwWaitResult = WaitForSingleObject(mutex, 1);
+		//TODO: Handle errors
+		DWORD dwWaitResult = WaitForSingleObject(mutex, INFINITE);
+		switch(dwWaitResult){
+		case WAIT_ABANDONED:
+			break;
+		case WAIT_OBJECT_0:
+			break;
+		case WAIT_TIMEOUT:
+			break;
+		case WAIT_FAILED:
+			break;
 		}
 
 		fwprintf(fp, L"%s <%02d:%02d:%02d.%03d> %s at [%s:%d]\t%s.%s >> %s\n", pType, lt.wHour, lt.wMinute, lt.wSecond, lt.wMilliseconds, pFuncName, pFileName, lineNo, objStr, childObjStr, msg);
+		fflush(fp);
+
+		ReleaseMutex(mutex);
+	}
+
+	void WritePtr(LPCWSTR pType, LPCWSTR pFuncName, LPCWSTR pFileName, int lineNo, LPCWSTR objStr, LPCWSTR childObjStr, LPCWSTR msg, DWORD ptr){
+		#ifdef JT_ODDEBUG
+		wchar_t buf[2048];
+		swprintf(buf, 2048, L"%s %s at [%s:%d]\t%s.%s > %s. Pointer: %p\n", pType, pFuncName, pFileName, lineNo, objStr, childObjStr, msg, ptr);
+		OutputDebugString(buf);
+		#endif
+
+		if(fp == NULL)
+			return;
+
+		SYSTEMTIME lt;
+		GetLocalTime(&lt);
+
+		//TODO: Handle errors
+		DWORD dwWaitResult = WaitForSingleObject(mutex, INFINITE);
+		switch(dwWaitResult){
+		case WAIT_ABANDONED:
+			break;
+		case WAIT_OBJECT_0:
+			break;
+		case WAIT_TIMEOUT:
+			break;
+		case WAIT_FAILED:
+			break;
+		}
+
+		fwprintf(fp, L"%s <%02d:%02d:%02d.%03d> %s at [%s:%d]\t%s.%s >> %s. Pointer: %p\n", pType, lt.wHour, lt.wMinute, lt.wSecond, lt.wMilliseconds, pFuncName, pFileName, lineNo, objStr, childObjStr, msg, ptr);
 		fflush(fp);
 
 		ReleaseMutex(mutex);

@@ -9,56 +9,69 @@
 
 //Functions for reading from INI from ObjectTimer.cpp
 //TODO: make separated file for helper functions
-extern wstring INIReadStr(wstring cat, wstring name, wstring fileName);
-extern int INIReadInt(wstring cat, wstring name, wstring fileName);
+extern LPCWSTR INIReadStr(LPCWSTR cat, LPCWSTR name, LPCWSTR fileName);
+extern int INIReadInt(LPCWSTR cat, LPCWSTR name, LPCWSTR fileName);
 
 namespace JungleTime{
 
 class SmiteIgniteIndicator : public JungleTime::IRenderableObject
 {
 public:
-	SmiteIgniteIndicator(wstring innerName, int flat, int perlvl)
-		: innerName(innerName), flat(flat), perlvl(perlvl){
-		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"loading...");
+	SmiteIgniteIndicator(LPCWSTR innerName, int flat, int perlvl)
+		: innerName(innerName), flat(flat), perlvl(perlvl), font(0), resourcesAreReady(false){
+		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"loading...");
 
 		/************************************************************************/
 		/* OVERLAY                                                              */
 		/************************************************************************/
 		//Label
-		labelName = INIReadStr(L"overlay", innerName+L"_label_name", CONFIG_NAME_DESIGN);
-		showLabel = !!INIReadInt(L"overlay", innerName+L"_show_label", CONFIG_NAME_DESIGN);
-		labelFontColor = INIReadInt(L"overlay", innerName+L"_label_font_color", CONFIG_NAME_DESIGN);
+		labelName = INIReadStr(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_label_name"), CONFIG_NAME_DESIGN);
+		showLabel = !!INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_show_label"), CONFIG_NAME_DESIGN);
+		labelFontColor = INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_label_font_color"), CONFIG_NAME_DESIGN);
 		SetRect(&labelCoords,
-			INIReadInt(L"overlay", innerName+L"_label_pos_x", CONFIG_NAME_DESIGN),
-			INIReadInt(L"overlay", innerName+L"_label_pos_y", CONFIG_NAME_DESIGN),
+			INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_label_pos_x"), CONFIG_NAME_DESIGN),
+			INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_label_pos_y"), CONFIG_NAME_DESIGN),
 			300, 300);
 
 		//Indicator
-		indiFontSize = INIReadInt(L"overlay", innerName+L"_indi_font_size", CONFIG_NAME_DESIGN);
-		indiFontWeight = INIReadInt(L"overlay", innerName+L"_indi_font_weight", CONFIG_NAME_DESIGN);
-		indiFontName = INIReadStr(L"overlay", innerName+L"_indi_font_name", CONFIG_NAME_DESIGN);
-		indiFontColor = INIReadInt(L"overlay", innerName+L"_indi_font_color", CONFIG_NAME_DESIGN);
+		indiFontSize = INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_indi_font_size"), CONFIG_NAME_DESIGN);
+		indiFontWeight = INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_indi_font_weight"), CONFIG_NAME_DESIGN);
+		indiFontName = INIReadStr(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_indi_font_name"), CONFIG_NAME_DESIGN);
+		indiFontColor = INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_indi_font_color"), CONFIG_NAME_DESIGN);
 
 		SetRect(&indiCoords,
-			INIReadInt(L"overlay", innerName+L"_indi_pos_x", CONFIG_NAME_DESIGN),
-			INIReadInt(L"overlay", innerName+L"_indi_pos_y", CONFIG_NAME_DESIGN),
+			INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_indi_pos_x"), CONFIG_NAME_DESIGN),
+			INIReadInt(L"overlay", INI_NAME_WITH_PREFIX(innerName, L"_indi_pos_y"), CONFIG_NAME_DESIGN),
 			300, 300);
 		
-		LOG_VERBOSE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"loaded");
+		LOG_VERBOSE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"loaded");
 	}
 
 	virtual ~SmiteIgniteIndicator(void){
-		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"unloading...");	
+		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"unloading...");	
 		
+		//Delete used mem
+		delete labelName;
+		delete indiFontName;
+				
 		//Release resources only if application loop is alive, we dont need to freeze application in the process list
-		if(!IS_DX_LOOP_DEAD)
+		if(font != NULL && !IS_DX_LOOP_DEAD)
 			font->Release();
-
-		LOG_VERBOSE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"unloaded");	
+		resourcesAreReady = true;
+		LOG_VERBOSE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"unloaded");	
 	}
 
 	void Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs){
-		LOG_DEBUG_EF_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"drawing");
+		if(!resourcesAreReady){
+			LOG_WARNING_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"resources was not ready in the real application way, trying to create it by myself...");
+			PrepareResources(pDevice);
+			if(!resourcesAreReady){
+				LOG_ERROR_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"but i cant create resources, waiting 500 ms");
+				Sleep(500);
+				return;
+			}
+		}
+		LOG_DEBUG_EF_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"drawing");
 
 		if(!playerLevel && frameNum%30 == 0){
 			TryToInitPointers();
@@ -66,41 +79,57 @@ public:
 			//But if still not available...
 			#ifdef _DEBUG
 			if(!playerLevel)
-				LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"pointers still not available");
+				LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"pointers still not available");
 			#endif
 		}
 
 		//If we still cannot find needed pointers - we have nothing to render...
 		if(!playerLevel){
-			LOG_DEBUG_EF_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"pointers still not available");
+			LOG_DEBUG_EF_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"pointers still not available");
 			return;
 		}
 		
 		wchar_t istr[30];
 		_itow_s(flat+perlvl*(*playerLevel), istr, 10);
 		if(showLabel)
-			font->DrawText(NULL, labelName.c_str(), -1, &labelCoords, DT_NOCLIP, labelFontColor);
+			font->DrawText(NULL, labelName, -1, &labelCoords, DT_NOCLIP, labelFontColor);
 		font->DrawText(NULL, istr, -1, &indiCoords, DT_NOCLIP, indiFontColor);
-
-		LOG_DEBUG_EF_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"draw is done");
+		resourcesAreReady = false;
+		LOG_DEBUG_EF_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"draw is done");
 	}
 	
-	void PrepareRender(PDIRECT3DDEVICE9 pDevice){
-		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"preparing render");
-
-		//Create DirectX objects
-		D3DXCreateFont(pDevice, indiFontSize, 0, indiFontWeight, 1, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, indiFontName.c_str(), &font);
-		
+	void Init(PDIRECT3DDEVICE9 pDevice){
+		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"preparing...");
 		//Find needed pointers
 		TryToInitPointers();
+		LOG_VERBOSE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"is ready");
+	}
 
-		LOG_VERBOSE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"is ready to draw");
+	void OnLostDevice(){
+		if(font)
+			font->OnLostDevice();
+	}
+
+	void OnResetDevice(PDIRECT3DDEVICE9 pDevice){
+		if(font)
+			font->OnResetDevice();
+	}
+
+	void PrepareResources(PDIRECT3DDEVICE9 pDevice){
+		//Create DirectX objects
+		HRESULT res = D3DXCreateFont(pDevice, indiFontSize, 0, indiFontWeight, 1, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, indiFontName, &font);
+		if(res != S_OK){
+			LOG_ERROR_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"cannot create resources");
+			return;
+		}
+		resourcesAreReady = true;
+		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"resources are ready");
 	}
 
 private:
 	//Get pointers we can grab only in runtime, after some special in-game events
 	void TryToInitPointers(){
-		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"trying to find needed pointers");
+		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"trying to find needed pointers");
 		
 		DWORD res = *((DWORD *)LOL_MEM_PLAYER_LEVEL_PTR);
 		if(!res)
@@ -112,7 +141,7 @@ private:
 		res += LOL_MEM_PLAYER_LEVEL_OFFSET2;
 		playerLevel = (int*)res;
 		
-		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName.c_str(), L"all pointers are found");
+		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"all pointers are found");
 	}
 
 	//In-game pointers
@@ -120,7 +149,7 @@ private:
 	bool *isAlivePtr;
 
 	//Name for config and logging
-	wstring innerName;
+	LPCWSTR innerName;
 
 	int flat;
 	int perlvl; //additional damage
@@ -129,7 +158,7 @@ private:
 	/*    OVERLAY SETTINGS                                                  */
 	/************************************************************************/
 	//Label
-	wstring labelName;
+	LPCWSTR labelName;
 	bool showLabel;
 	RECT labelCoords;
 	DWORD labelFontColor;
@@ -138,11 +167,12 @@ private:
 	RECT indiCoords;
 	int indiFontSize;
 	int indiFontWeight;
-	wstring indiFontName;
+	LPCWSTR indiFontName;
 	DWORD indiFontColor;
 
 	//Overlay fonts
 	LPD3DXFONT font;
+	bool resourcesAreReady;
 };
 
 //Init static variables.

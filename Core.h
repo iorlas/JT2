@@ -17,6 +17,8 @@ private:
 	void OnDXFirstFrame(LPDIRECT3DDEVICE9 pDevice);
 	void OnDXInitiated(void);
 	void OnDXEndScene(LPDIRECT3DDEVICE9 pDevice);
+	void OnDXResetDevice(LPDIRECT3DDEVICE9 pDevice);
+	void OnDXLostDevice();
 
 	void InitTimePointers();
 

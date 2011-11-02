@@ -10,10 +10,12 @@ public:
 	DX9Manager(void);
 	~DX9Manager(void);
 
-	static DWORD WINAPI MainHookDX9(LPVOID Param);
+	static unsigned int WINAPI MainHookDX9(void *param);
 
 	//Our dirty hooks...
 	static void HookEndScene(LPDIRECT3DDEVICE9 pDevice);
+	static void HookPreReset();
+	static void HookPostReset(LPDIRECT3DDEVICE9 pDevice, HRESULT res);
 
 	//Temporary indicators for the EndScene
 	bool isInitiated;
@@ -29,6 +31,10 @@ private:
 	virtual void OnDXInitiated(void);
 	//On each frame
 	virtual void OnDXEndScene(LPDIRECT3DDEVICE9 pDevice);
+	//On reset
+	virtual void OnDXResetDevice(LPDIRECT3DDEVICE9 pDevice);
+	//On resources unloading
+	virtual void OnDXLostDevice();
 
 	HANDLE hDXHookThread;
 
@@ -37,6 +43,7 @@ private:
 	RECT consoleRect;
 
 	LPDIRECT3DDEVICE9 d3d9Device;
+	bool isDeviceReady;
 };
 
 }

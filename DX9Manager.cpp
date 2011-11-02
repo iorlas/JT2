@@ -7,13 +7,13 @@ DX9Manager* DX9Manager::singleton = NULL;
 //Original funcs to call after hook
 DX9Manager::DX9Manager(void):
 	isInitiated(false), isFirstFrame(false), isFirstInitiatedFrame(false),
-	consoleFont(0){
+	consoleFont(0), isDeviceReady(true){
 	LOG_DEBUG_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"Init", L"starting...");
 	if(singleton)
 		LOG_ERROR_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"Init", L"dude... you are idiot, we cant create more singletons >:(");
 	singleton = this;
 	SetRect(&consoleRect, 20, 20, 100, 100);
-	hDXHookThread = CreateThread(0, 1024, DX9Manager::MainHookDX9, 0, 0, 0);
+	hDXHookThread = (HANDLE)_beginthreadex(NULL, 0, DX9Manager::MainHookDX9, NULL, 0, NULL);
 	LOG_VERBOSE_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"Init", L"done");
 }
 
@@ -29,6 +29,8 @@ DX9Manager::~DX9Manager(void){
 		return;
 	}
 	D3D9DeviceFuncUnHook(ENDSCENE);
+	D3D9DeviceFuncUnHook(PRERESET);
+	D3D9DeviceFuncUnHook(POSTRESET);
 
 	//Release resources only if application loop is alive, we dont need to freeze application in the process list
 	if(!IS_DX_LOOP_DEAD)
@@ -40,6 +42,28 @@ DX9Manager::~DX9Manager(void){
 }
 
 void DX9Manager::HookEndScene(LPDIRECT3DDEVICE9 pDevice){
+	//I prefer to check it each time
+	HRESULT r = pDevice->TestCooperativeLevel();
+	if(r == D3DERR_DEVICELOST){
+		singleton->isDeviceReady = false;
+		//Ok, lost, now we can free our old resources
+		LOG_WARNING_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"HookEndScene", L"device is LOST!");
+		Sleep(500); //Wait a bit so we don't burn through cycles for no reason (c) http://www.drunkenhyena.com/cgi-bin/view_cpp_article.pl?chapter=2;article=10
+		return;
+	}else if(r == D3DERR_DEVICENOTRESET){
+		singleton->isDeviceReady = false;
+		LOG_WARNING_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"HookEndScene", L"device can be resetted, waiting for the main app Device->Reset call");
+		return;
+	}else if(r != D3D_OK){
+		LOG_WARNING_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"HookEndScene", L"unknown state of device, skip renderring");
+		Sleep(500); //Wait a bit so we don't burn through cycles for no reason (c) http://www.drunkenhyena.com/cgi-bin/view_cpp_article.pl?chapter=2;article=10
+		return;
+	}
+
+	//If device wasnt ready for this moment - we have nothing to do
+	if(!singleton->isDeviceReady)
+		return;
+
 	//At first frame, we need to init every dx thing
 	if(!singleton->isFirstFrame){
 		LOG_DEBUG_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"OnFirstFrame", L"first frame catched");
@@ -49,9 +73,9 @@ void DX9Manager::HookEndScene(LPDIRECT3DDEVICE9 pDevice){
 	}
 	
 	//For the loading time
-	if(!singleton->isInitiated)
+	if(!singleton->isInitiated){
 		singleton->consoleFont->DrawText(NULL, L"JT2 init...", -1, &singleton->consoleRect, DT_CENTER|DT_NOCLIP, 0xFFFFFFFF);
-	else{
+	}else{
 		//First frame after initiation of the real application is complete
 		if(!singleton->isFirstInitiatedFrame){
 			LOG_DEBUG_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"OnFirstFrame", L"first initiated app frame catched");
@@ -63,7 +87,29 @@ void DX9Manager::HookEndScene(LPDIRECT3DDEVICE9 pDevice){
 	}
 }
 
-DWORD WINAPI DX9Manager::MainHookDX9(LPVOID Param){
+void DX9Manager::HookPreReset(){
+	singleton->consoleFont->OnLostDevice();
+	singleton->OnDXLostDevice();
+	LOG_DEBUG_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"HookReset", L"all resources are unloaded");
+
+	singleton->isDeviceReady = false;
+}
+
+void DX9Manager::HookPostReset(LPDIRECT3DDEVICE9 pDevice, HRESULT res){
+	if(!SUCCEEDED(res)){
+		LOG_DEBUG_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"HookPostReset", L"unsuccessfull reset of device");
+		return;
+	}
+	LOG_DEBUG_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"HookPostReset", L"successfull reset of device");
+	
+	singleton->consoleFont->OnResetDevice();
+	singleton->OnDXResetDevice(pDevice);
+	LOG_DEBUG_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"HookPostReset", L"all resources are ready");
+
+	singleton->isDeviceReady = true;
+}
+
+unsigned int WINAPI DX9Manager::MainHookDX9(void *param){
 	//Waiting for d3d lib is loaded
 	LOG_VERBOSE_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"MainThread", L"waiting for the lib");
     while(GetModuleHandle(L"d3d9.dll")==NULL)
@@ -86,23 +132,42 @@ DWORD WINAPI DX9Manager::MainHookDX9(LPVOID Param){
 		Sleep(250);
 		res = D3D9DeviceFuncHook(ENDSCENE, &HookEndScene);
 	}while (!res);
+
+	do{
+		Sleep(250);
+		res = D3D9DeviceFuncHook(PRERESET, &HookPreReset);
+	}while (!res);
+
+	do{
+		Sleep(250);
+		res = D3D9DeviceFuncHook(POSTRESET, &HookPostReset);
+	}while (!res);
+
+
 	LOG_VERBOSE_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"MainThread", L"hooking done");
 	
 	//Touch our event...
 	singleton->OnDXInitiated();
 
 	LOG_VERBOSE_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"MainThread", L"thread work done");
+
 	return 0;
 }
 
 void DX9Manager::OnDXFirstFrame(LPDIRECT3DDEVICE9 pDevice){
-	LOG_WARNING_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"OnDXFirstFrame", L"On First Frame event unhooked!");
+	LOG_WARNING_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"OnDXFirstFrame", L"event unhooked!");
 }
 void DX9Manager::OnDXInitiated(void){
-	LOG_WARNING_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"OnDXInitiated", L"On Init event unhooked!");
+	LOG_WARNING_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"OnDXInitiated", L"event unhooked!");
 }
 void DX9Manager::OnDXEndScene(LPDIRECT3DDEVICE9 pDevice){
-	LOG_WARNING_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"OnDXEndScene", L"On End Scene event unhooked!");
+	LOG_WARNING_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"OnDXEndScene", L"event unhooked!");
+}
+void DX9Manager::OnDXResetDevice(LPDIRECT3DDEVICE9 pDevice){
+	LOG_WARNING_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"OnDXResetDevice", L"event unhooked!");
+}
+void DX9Manager::OnDXLostDevice(){
+	LOG_WARNING_MF(L"DX9Manager.cpp", L"DirectX9Manager", L"OnDXLostDevice", L"event unhooked!");
 }
 
 }

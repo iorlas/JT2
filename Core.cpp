@@ -51,20 +51,20 @@ void Core::OnDXInitiated(void){
 	if(tmp == LOL_MAP_SUMMONERS_RIFT){
 		//Loading all the timers
 		LOG_DEBUG_MF(L"Core.cpp", L"Core", L"Timers", L"creating...");
-		TIMER_NEW(L"baron", 420, 900, LOL_MEM_NETOBJECT_BARON_PATTERN);
-		TIMER_NEW(L"dragon", 360, 150, LOL_MEM_NETOBJECT_DRAGON_PATTERN);
+		// TIMER_NEW(L"baron", 420, 900, LOL_MEM_NETOBJECT_BARON_PATTERN);
+		// TIMER_NEW(L"dragon", 360, 150, LOL_MEM_NETOBJECT_DRAGON_PATTERN);
 
-		TIMER_NEW(L"top_blue", 300, 115, LOL_MEM_NETOBJECT_TOP_BLUE_PATTERN);
-		TIMER_NEW(L"top_red", 300, 115, LOL_MEM_NETOBJECT_TOP_RED_PATTERN);
-		TIMER_NEW(L"top_wraiths", 100, 100, LOL_MEM_NETOBJECT_TOP_WRAITHS_PATTERN);
-		TIMER_NEW(L"top_golems", 100, 100, LOL_MEM_NETOBJECT_TOP_GOLEMS_PATTERN);
-		TIMER_NEW(L"top_wolves", 100, 100, LOL_MEM_NETOBJECT_TOP_WOLVES_PATTERN);
+		// TIMER_NEW(L"top_blue", 300, 115, LOL_MEM_NETOBJECT_TOP_BLUE_PATTERN);
+		// TIMER_NEW(L"top_red", 300, 115, LOL_MEM_NETOBJECT_TOP_RED_PATTERN);
+		// TIMER_NEW(L"top_wraiths", 100, 100, LOL_MEM_NETOBJECT_TOP_WRAITHS_PATTERN);
+		// TIMER_NEW(L"top_golems", 100, 100, LOL_MEM_NETOBJECT_TOP_GOLEMS_PATTERN);
+		// TIMER_NEW(L"top_wolves", 100, 100, LOL_MEM_NETOBJECT_TOP_WOLVES_PATTERN);
 
-		TIMER_NEW(L"bot_blue", 300, 115, LOL_MEM_NETOBJECT_BOT_BLUE_PATTERN);
-		TIMER_NEW(L"bot_red", 300, 115, LOL_MEM_NETOBJECT_BOT_RED_PATTERN);
-		TIMER_NEW(L"bot_wraiths", 100, 100, LOL_MEM_NETOBJECT_BOT_WRAITHS_PATTERN);
-		TIMER_NEW(L"bot_golems", 100, 100, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
-		TIMER_NEW(L"bot_wolves", 100, 100, LOL_MEM_NETOBJECT_BOT_WOLVES_PATTERN);
+		// TIMER_NEW(L"bot_blue", 300, 115, LOL_MEM_NETOBJECT_BOT_BLUE_PATTERN);
+		// TIMER_NEW(L"bot_red", 300, 115, LOL_MEM_NETOBJECT_BOT_RED_PATTERN);
+		// TIMER_NEW(L"bot_wraiths", 100, 100, LOL_MEM_NETOBJECT_BOT_WRAITHS_PATTERN);
+		// TIMER_NEW(L"bot_golems", 100, 100, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
+		// TIMER_NEW(L"bot_wolves", 100, 100, LOL_MEM_NETOBJECT_BOT_WOLVES_PATTERN);
 		LOG_DEBUG_MF(L"Core.cpp", L"Core", L"Timers", L"Summoners Rift timers loaded");
 	}
 
@@ -86,7 +86,7 @@ void Core::OnDXEndScene(LPDIRECT3DDEVICE9 pDevice){
 
 	//Get current in-game time
 	int curTime = LOL_MEM_GET_GAMETIME();
-
+	LOG_DEBUG_EF_MF(L"Core.cpp", L"Core", L"Render", L"got a time");
 	//Go-go!
 	for (vector<IRenderableObject*>::iterator it = renderObjects.begin(); it != renderObjects.end(); it++)
 		(*it)->Render(pDevice, framesCounter, curTime);
@@ -96,9 +96,25 @@ void Core::OnDXFirstFrame(LPDIRECT3DDEVICE9 pDevice){
 	LOG_DEBUG_MF(L"Core.cpp", L"Core", L"FirstFrame", L"frame catched");
 	InitTimePointers();
 
-	for (vector<IRenderableObject*>::iterator it = renderObjects.begin(); it != renderObjects.end(); it++)
-		(*it)->PrepareRender(pDevice);
+	for (vector<IRenderableObject*>::iterator it = renderObjects.begin(); it != renderObjects.end(); it++){
+		(*it)->Init(pDevice);
+		(*it)->PrepareResources(pDevice);
+	}
 	LOG_DEBUG_MF(L"Core.cpp", L"Core", L"FirstFrame", L"work is done");
+}
+
+void Core::OnDXResetDevice(LPDIRECT3DDEVICE9 pDevice){
+	LOG_DEBUG_MF(L"Core.cpp", L"Core", L"DXReset", L"trying to reset DX resources...");
+	for (vector<IRenderableObject*>::iterator it = renderObjects.begin(); it != renderObjects.end(); it++)
+		(*it)->OnResetDevice(pDevice);
+	LOG_VERBOSE_MF(L"Core.cpp", L"Core", L"DXReset", L"done");
+}
+
+void Core::OnDXLostDevice(){
+	LOG_DEBUG_MF(L"Core.cpp", L"Core", L"LostDevice", L"trying to free DX resources...");
+	for (vector<IRenderableObject*>::iterator it = renderObjects.begin(); it != renderObjects.end(); it++)
+		(*it)->OnLostDevice();
+	LOG_VERBOSE_MF(L"Core.cpp", L"Core", L"LostDevice", L"done");
 }
 
 void Core::InitTimePointers(){
