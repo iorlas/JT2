@@ -7,11 +7,6 @@
 #define TYPE_SMITE 1
 #define TYPE_IGNITE 2
 
-//Functions for reading from INI from ObjectTimer.cpp
-//TODO: make separated file for helper functions
-extern LPCWSTR INIReadStr(LPCWSTR cat, LPCWSTR name, LPCWSTR fileName);
-extern int INIReadInt(LPCWSTR cat, LPCWSTR name, LPCWSTR fileName);
-
 namespace JungleTime{
 
 class SmiteIgniteIndicator : public JungleTime::IRenderableObject

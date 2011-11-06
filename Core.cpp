@@ -34,19 +34,25 @@ void Core::OnDXInitiated(void){
 	//Check current map for support of our timers
 	LOG_VERBOSE_MF(L"Core.cpp", L"Core", L"Objects", L"waiting for the map");
 	int tmp = 0;
+
+	//If string is zero-size, it mean map wasnt loaded. Yet. We need to wait some time.
 	while((tmp = strlen((char*)LOL_MEM_MAP_NAME_OFFSET)) == 0)
 		Sleep(10);
 	LOG_DEBUG_MF(L"Core.cpp", L"Core", L"Objects", L"map found");
+
+	//Compare string, just like a usual string, it's just a bytes
+	//Summoners Rift and its versions
 	if((strcmp(LOL_MAP_SUMMONERS_RIFT_NAME, (char*)LOL_MEM_MAP_NAME_OFFSET) == 0) ||
 		(strcmp(LOL_MAP_SUMMONERS_RIFT_AUT_NAME, (char*)LOL_MEM_MAP_NAME_OFFSET) == 0)){
 		tmp = LOL_MAP_SUMMONERS_RIFT;
 		LOG_VERBOSE_MF(L"Core.cpp", L"Core", L"Objects", L"current map is Summoners Rift");
+	//Unknown
 	}else{
 		tmp = 0;
 		LOG_ERROR_MF(L"Core.cpp", L"Core", L"Objects", L"unknown map loaded!");
 	}
 
-	LOG_VERBOSE_MF(L"Core.cpp", L"Core", L"Objects", L"creating...");
+	LOG_DEBUG_MF(L"Core.cpp", L"Core", L"Objects", L"creating...");
 	//We support only Summoners Rift map for jungle camps
 	if(tmp == LOL_MAP_SUMMONERS_RIFT){
 		//Loading all the timers
@@ -65,16 +71,18 @@ void Core::OnDXInitiated(void){
 		// TIMER_NEW(L"bot_wraiths", 100, 100, LOL_MEM_NETOBJECT_BOT_WRAITHS_PATTERN);
 		// TIMER_NEW(L"bot_golems", 100, 100, LOL_MEM_NETOBJECT_BOT_GOLEMS_PATTERN);
 		// TIMER_NEW(L"bot_wolves", 100, 100, LOL_MEM_NETOBJECT_BOT_WOLVES_PATTERN);
-		LOG_DEBUG_MF(L"Core.cpp", L"Core", L"Timers", L"Summoners Rift timers loaded");
+		LOG_VERBOSE_MF(L"Core.cpp", L"Core", L"Timers", L"Summoners Rift timers loaded");
 	}
 
 	//Indicators
 	LOG_DEBUG_MF(L"Core.cpp", L"Core", L"Indicators", L"creating...");
 	INDICATOR_NEW(L"smite", 420, 25);
 	INDICATOR_NEW(L"ignite", 50, 20);
-	LOG_DEBUG_MF(L"Core.cpp", L"Core", L"Indicators", L"loaded");
+	LOG_VERBOSE_MF(L"Core.cpp", L"Core", L"Indicators", L"loaded");
 	LOG_VERBOSE_MF(L"Core.cpp", L"Core", L"Objects", L"creation is complete");
 
+	//Turn off renderring of the status text
+	SetStatusIsRender(false);
 	isInitiated = true;
 }
 void Core::OnDXEndScene(LPDIRECT3DDEVICE9 pDevice){
@@ -87,32 +95,35 @@ void Core::OnDXEndScene(LPDIRECT3DDEVICE9 pDevice){
 	//Get current in-game time
 	int curTime = LOL_MEM_GET_GAMETIME();
 	LOG_DEBUG_EF_MF(L"Core.cpp", L"Core", L"Render", L"got a time");
+
 	//Go-go!
-	for (vector<IRenderableObject*>::iterator it = renderObjects.begin(); it != renderObjects.end(); it++)
+	for_each(vector<IRenderableObject*>, renderObjects, it)
 		(*it)->Render(pDevice, framesCounter, curTime);
 	LOG_DEBUG_EF_MF(L"Core.cpp", L"Core", L"Render", L"frame is done");
 }
+
+//Calls on the first frame, after the initiation of the core(see flag isInitiated)
 void Core::OnDXFirstFrame(LPDIRECT3DDEVICE9 pDevice){
 	LOG_DEBUG_MF(L"Core.cpp", L"Core", L"FirstFrame", L"frame catched");
 	InitTimePointers();
 
-	for (vector<IRenderableObject*>::iterator it = renderObjects.begin(); it != renderObjects.end(); it++){
+	for_each(vector<IRenderableObject*>, renderObjects, it){
 		(*it)->Init(pDevice);
 		(*it)->PrepareResources(pDevice);
 	}
-	LOG_DEBUG_MF(L"Core.cpp", L"Core", L"FirstFrame", L"work is done");
+	LOG_VERBOSE_MF(L"Core.cpp", L"Core", L"FirstFrame", L"work is done");
 }
 
 void Core::OnDXResetDevice(LPDIRECT3DDEVICE9 pDevice){
 	LOG_DEBUG_MF(L"Core.cpp", L"Core", L"DXReset", L"trying to reset DX resources...");
-	for (vector<IRenderableObject*>::iterator it = renderObjects.begin(); it != renderObjects.end(); it++)
+	for_each(vector<IRenderableObject*>, renderObjects, it)
 		(*it)->OnResetDevice(pDevice);
 	LOG_VERBOSE_MF(L"Core.cpp", L"Core", L"DXReset", L"done");
 }
 
 void Core::OnDXLostDevice(){
 	LOG_DEBUG_MF(L"Core.cpp", L"Core", L"LostDevice", L"trying to free DX resources...");
-	for (vector<IRenderableObject*>::iterator it = renderObjects.begin(); it != renderObjects.end(); it++)
+	for_each(vector<IRenderableObject*>, renderObjects, it)
 		(*it)->OnLostDevice();
 	LOG_VERBOSE_MF(L"Core.cpp", L"Core", L"LostDevice", L"done");
 }
@@ -124,7 +135,7 @@ void Core::InitTimePointers(){
 		ingameClockNow = (float *)((*(DWORD*)LOL_MEM_CURRENT_TIME_STRUCT_PTR)+LOL_MEM_CURRENT_TIME_OFFSET);
 	if(ingameClockStart == NULL)
 		ingameClockStart = (float *)LOL_MEM_START_TIME_PTR;
-	LOG_DEBUG_MF(L"Core.cpp", L"Core", L"Pointers", L"pointers are found");
+	LOG_VERBOSE_MF(L"Core.cpp", L"Core", L"Pointers", L"pointers are found");
 }
 
 }

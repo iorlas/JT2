@@ -20,6 +20,7 @@
     <ClInclude Include="SmiteIgniteIndicator.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="helpers.cpp" />
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="DX9Manager.cpp" />
     <ClCompile Include="main.cpp" />
@@ -62,6 +63,7 @@
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>D:\apps\d3d9proxy;C:\Program Files\Microsoft DirectX SDK %28June 2010%29\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

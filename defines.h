@@ -36,6 +36,15 @@ using namespace std;
 
 LOG_USE;
 
+/************************************************************************/
+/*    HELPERS                                                           */
+/************************************************************************/
+LPCWSTR INIReadStr(LPCWSTR cat, LPCWSTR name, LPCWSTR fileName);
+int INIReadInt(LPCWSTR cat, LPCWSTR name, LPCWSTR fileName);
+int TryCopyMem(void *dest, const void *src, size_t count);
+
+#define for_each(type, arr, itr) for(type##::iterator itr## = arr##.begin(); itr## != arr##.end(); ++itr##)
+
 #define LOL_WINDOW_NAME L"League of Legends (TM) Client"
 #define IS_DX_LOOP_DEAD (!FindWindow(NULL, LOL_WINDOW_NAME))
 
@@ -47,6 +56,7 @@ LOG_USE;
 #define LOL_MAP_SUMMONERS_RIFT_AUT_NAME "Map2"
 
 #define LOL_MAP_SUMMONERS_RIFT 1
+#define LOL_MAP_TWISTED_TREELINE 2
 
 /************************************************************************/
 /*    NET-OBJECTS OFFSETS AND POINTERS                                  */
@@ -94,3 +104,5 @@ LOG_USE;
 #define CONFIG_NAME_USER L"./jt2_user.ini" //User configuration file
 
 #define INI_NAME_WITH_PREFIX(prefix, postfix) ((wstring(##prefix) + ##postfix).c_str())
+
+

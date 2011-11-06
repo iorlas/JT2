@@ -17,6 +17,10 @@ public:
 	static void HookPreReset();
 	static void HookPostReset(LPDIRECT3DDEVICE9 pDevice, HRESULT res);
 
+	//For the status message
+	void SetStatusText(wstring txt);
+	void SetStatusIsRender(bool isRender);
+
 	//Temporary indicators for the EndScene
 	bool isInitiated;
 	bool isFirstFrame;
@@ -38,9 +42,11 @@ private:
 
 	HANDLE hDXHookThread;
 
-	//For the "loading..." label
-	LPD3DXFONT consoleFont;
-	RECT consoleRect;
+	//For the "loading..." label and status text
+	LPD3DXFONT statusFont;
+	RECT statusRect;
+	wstring statusText;
+	bool isRenderStatus;
 
 	LPDIRECT3DDEVICE9 d3d9Device;
 	bool isDeviceReady;
