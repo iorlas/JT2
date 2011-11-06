@@ -8,16 +8,16 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpvReserved){
     if(dwReason == DLL_PROCESS_ATTACH){
     	int res;
 		LOG_INIT("jt2");
-		LOG_DEBUG_MF(L"main.cpp", L"DLL", L"Attach", L"in process...");
+		LOG_DEBUG_MF(L"main.cpp", 0, L"DLL", L"Attach", L"in process...");
 		JungleTime::Core::singleton = new JungleTime::Core();
 		res = JungleTime::Core::singleton->Init();
-		LOG_VERBOSE_MF(L"main.cpp", L"DLL", L"Attach", L"complete");
+		LOG_VERBOSE_MF(L"main.cpp", 0, L"DLL", L"Attach", L"complete");
 		return res;
     }
     else if(dwReason == DLL_PROCESS_DETACH){
-    	LOG_DEBUG_MF(L"main.cpp", L"DLL", L"Detach", L"in progress...");
+    	LOG_DEBUG_MF(L"main.cpp", 0, L"DLL", L"Detach", L"in progress...");
 		delete JungleTime::Core::singleton;
-		LOG_VERBOSE_MF(L"main.cpp", L"DLL", L"Detach", L"complete");
+		LOG_VERBOSE_MF(L"main.cpp", 0, L"DLL", L"Detach", L"complete");
     }
     return TRUE;
 }

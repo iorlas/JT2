@@ -71,8 +71,9 @@ inline int TryDirectReadMem(T *dest, T *src){
 /*    NET-OBJECTS OFFSETS AND POINTERS                                  */
 /************************************************************************/
 #define LOL_MEM_NETOBJECT_PATTERN_OFFSET 0x0000005C
-#define LOL_MEM_NETOBJECT_IS_ALIVE_OFFSET 0x00000134
-#define LOL_MEM_NETOBJECTS_ARRAY_PTR 0x02C8022C
+#define LOL_MEM_NETOBJECT_PATTERN2_OFFSET 0x000000FC
+#define LOL_MEM_NETOBJECT_IS_ALIVE_OFFSET 0x00000135
+#define LOL_MEM_NETOBJECTS_ARRAY_PTR 0x02C7E0A4
 #define LOL_MEM_NETOBJECTS_MAX_PTR_INT 0x02C81220
 #define LOL_MEM_NETOBJECTS_MAX 10000 //anyway...
 

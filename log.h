@@ -30,27 +30,27 @@
 //Just debug...
 //#define JT_DEBUG
 
-#define _LOG_MSG_MF(fileName, pType, objStr, childObjStr, msg) __log.WriteStr(##pType, __WFUNCTION__, ##fileName, __LINE__, ##objStr, ##childObjStr, ##msg)
-#define _LOG_MSG_PTR_MF(fileName, pType, objStr, childObjStr, msg, ptr) __log.WritePtr(##pType, __WFUNCTION__, ##fileName, __LINE__, ##objStr, ##childObjStr, ##msg, ##ptr)
+#define _LOG_MSG_MF(fileName, pType, gametime, objStr, childObjStr, msg) __log.WriteStr(##pType, __WFUNCTION__, ##fileName, __LINE__, ##gametime, ##objStr, ##childObjStr, ##msg)
+#define _LOG_MSG_PTR_MF(fileName, pType, gametime, objStr, childObjStr, msg, ptr) __log.WritePtr(##pType, __WFUNCTION__, ##fileName, __LINE__, ##gametime, ##objStr, ##childObjStr, ##msg, ##ptr)
 
 #if defined(_DEBUG) || defined(JT_DEBUG)
-#define LOG_DEBUG_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"DEBUG", ##objStr, ##childObjStr, ##msg) //add to code only in debug version. DEEP debug messages. A lot of 'em.
+#define LOG_DEBUG_MF(fileName, gametime, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"DEBUG", ##gametime, ##objStr, ##childObjStr, ##msg) //add to code only in debug version. DEEP debug messages. A lot of 'em.
 #else
-#define LOG_DEBUG_MF(fileName, objStr, childObjStr, msg) ;
+#define LOG_DEBUG_MF(fileName, gametime, objStr, childObjStr, msg) ;
 #endif
 
 #if (defined(_DEBUG) || defined(JT_DEBUG)) && defined(JT_EFDEBUG)
-#define LOG_DEBUG_EF_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"EFDEB", ##objStr, ##childObjStr, ##msg) //add to code only in debug version. DEEP debug messages. A lot of 'em.
+#define LOG_DEBUG_EF_MF(fileName, gametime, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"EFDEB", ##gametime, ##objStr, ##childObjStr, ##msg) //add to code only in debug version. DEEP debug messages. A lot of 'em.
 #else
-#define LOG_DEBUG_EF_MF(fileName, objStr, childObjStr, msg) ;
+#define LOG_DEBUG_EF_MF(fileName, gametime, objStr, childObjStr, msg) ;
 #endif
 
-#define LOG_VERBOSE_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"VERBO", ##objStr, ##childObjStr, ##msg) //common messages for a general things.
-#define LOG_WARNING_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"WARNI", ##objStr, ##childObjStr, ##msg) //error in anything. But we still can display something.
-#define LOG_ERROR_MF(fileName, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"ERROR", ##objStr, ##childObjStr, ##msg) //real errors, we cannot continue use Jungle Timer.
-#define LOG_ERROR_CODE_MF(fileName, objStr, childObjStr, msg, code) _LOG_MSG_PTR_MF(##fileName, L"ERROR", ##objStr, ##childObjStr, ##msg, ##code) //real errors with err code, we cannot continue use Jungle Timer.
+#define LOG_VERBOSE_MF(fileName, gametime, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"VERBO", ##gametime, ##objStr, ##childObjStr, ##msg) //common messages for a general things.
+#define LOG_WARNING_MF(fileName, gametime, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"WARNI", ##gametime, ##objStr, ##childObjStr, ##msg) //error in anything. But we still can display something.
+#define LOG_ERROR_MF(fileName, gametime, objStr, childObjStr, msg) _LOG_MSG_MF(##fileName, L"ERROR", ##gametime, ##objStr, ##childObjStr, ##msg) //real errors, we cannot continue use Jungle Timer.
+#define LOG_ERROR_CODE_MF(fileName, gametime, objStr, childObjStr, msg, code) _LOG_MSG_PTR_MF(##fileName, L"ERROR", ##gametime, ##objStr, ##childObjStr, ##msg, ##code) //real errors with err code, we cannot continue use Jungle Timer.
 
-#define LOG_VERBOSE_PTR_MF(fileName, objStr, childObjStr, msg, ptr) _LOG_MSG_PTR_MF(##fileName, L"VERBO", ##objStr, ##childObjStr, ##msg, ##ptr)
+#define LOG_VERBOSE_PTR_MF(fileName, gametime, objStr, childObjStr, msg, ptr) _LOG_MSG_PTR_MF(##fileName, L"VERBO", ##gametime, ##objStr, ##childObjStr, ##msg, ##ptr)
 
 class Log{
 private:
@@ -80,7 +80,7 @@ public:
 			fp = fopen(buffLogName, "a+");
 			if(fp != NULL){
 				fseek(fp, 0, SEEK_END);
-				fwprintf(fp, L"***************************** NEW LOG START *****************************\n");
+				fwprintf(fp, L"\n***************************** NEW LOG START *****************************\n");
 			}
 		}
 		mutex = CreateMutex(NULL, FALSE, L"JT211LogFileMutex");
@@ -94,10 +94,10 @@ public:
 		CloseHandle(mutex);
 	}
 
-	void WriteStr(LPCWSTR pType, LPCWSTR pFuncName, LPCWSTR pFileName, int lineNo, LPCWSTR objStr, LPCWSTR childObjStr, LPCWSTR msg){
+	void WriteStr(LPCWSTR pType, LPCWSTR pFuncName, LPCWSTR pFileName, int lineNo, int gameTimeSec, LPCWSTR objStr, LPCWSTR childObjStr, LPCWSTR msg){
 		#ifdef JT_ODDEBUG
 		wchar_t buf[2048];
-		swprintf(buf, 2048, L"%s %s at [%s:%d]\t%s.%s > %s\n", pType, pFuncName, pFileName, lineNo, objStr, childObjStr, msg);
+		swprintf(buf, 2048, L"(%05d) %s %s at [%s:%d]\t%s.%s > %s\n", gameTimeSec, pType, pFuncName, pFileName, lineNo, objStr, childObjStr, msg);
 		OutputDebugString(buf);
 		#endif
 
@@ -120,16 +120,16 @@ public:
 			break;
 		}
 
-		fwprintf(fp, L"%s <%02d:%02d:%02d.%03d> %s at [%s:%d]\t%s.%s >> %s\n", pType, lt.wHour, lt.wMinute, lt.wSecond, lt.wMilliseconds, pFuncName, pFileName, lineNo, objStr, childObjStr, msg);
+		fwprintf(fp, L"%s <%02d:%02d:%02d.%03d(%05d)> %s at [%s:%d]\t%s.%s >> %s\n", pType, lt.wHour, lt.wMinute, lt.wSecond, lt.wMilliseconds, gameTimeSec, pFuncName, pFileName, lineNo, objStr, childObjStr, msg);
 		fflush(fp);
 
 		ReleaseMutex(mutex);
 	}
 
-	void WritePtr(LPCWSTR pType, LPCWSTR pFuncName, LPCWSTR pFileName, int lineNo, LPCWSTR objStr, LPCWSTR childObjStr, LPCWSTR msg, DWORD ptr){
+	void WritePtr(LPCWSTR pType, LPCWSTR pFuncName, LPCWSTR pFileName, int lineNo, int gameTimeSec, LPCWSTR objStr, LPCWSTR childObjStr, LPCWSTR msg, DWORD ptr){
 		#ifdef JT_ODDEBUG
 		wchar_t buf[2048];
-		swprintf(buf, 2048, L"%s %s at [%s:%d]\t%s.%s > %s %p\n", pType, pFuncName, pFileName, lineNo, objStr, childObjStr, msg, ptr);
+		swprintf(buf, 2048, L"(%05d) %s %s at [%s:%d]\t%s.%s > %s %p\n", gameTimeSec, pType, pFuncName, pFileName, lineNo, objStr, childObjStr, msg, ptr);
 		OutputDebugString(buf);
 		#endif
 
@@ -152,7 +152,7 @@ public:
 			break;
 		}
 
-		fwprintf(fp, L"%s <%02d:%02d:%02d.%03d> %s at [%s:%d]\t%s.%s >> %s %p\n", pType, lt.wHour, lt.wMinute, lt.wSecond, lt.wMilliseconds, pFuncName, pFileName, lineNo, objStr, childObjStr, msg, ptr);
+		fwprintf(fp, L"%s <%02d:%02d:%02d.%03d(%05d)> %s at [%s:%d]\t%s.%s >> %s %p\n", pType, lt.wHour, lt.wMinute, lt.wSecond, lt.wMilliseconds, gameTimeSec, pFuncName, pFileName, lineNo, objStr, childObjStr, msg, ptr);
 		fflush(fp);
 
 		ReleaseMutex(mutex);
