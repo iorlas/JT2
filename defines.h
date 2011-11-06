@@ -36,16 +36,25 @@ using namespace std;
 
 LOG_USE;
 
+#define LOL_WINDOW_NAME L"League of Legends (TM) Client"
+
 /************************************************************************/
 /*    HELPERS                                                           */
 /************************************************************************/
 LPCWSTR INIReadStr(LPCWSTR cat, LPCWSTR name, LPCWSTR fileName);
 int INIReadInt(LPCWSTR cat, LPCWSTR name, LPCWSTR fileName);
 int TryCopyMem(void *dest, const void *src, size_t count);
-
+template <typename T>
+inline int TryDirectReadMem(T *dest, T *src){
+	__try{
+		*dest = *src;
+		return (int)dest;
+	}__except(EXCEPTION_EXECUTE_HANDLER){
+		return GetExceptionCode();
+	}
+}
 #define for_each(type, arr, itr) for(type##::iterator itr## = arr##.begin(); itr## != arr##.end(); ++itr##)
 
-#define LOL_WINDOW_NAME L"League of Legends (TM) Client"
 #define IS_DX_LOOP_DEAD (!FindWindow(NULL, LOL_WINDOW_NAME))
 
 /************************************************************************/
@@ -65,7 +74,7 @@ int TryCopyMem(void *dest, const void *src, size_t count);
 #define LOL_MEM_NETOBJECT_IS_ALIVE_OFFSET 0x00000134
 #define LOL_MEM_NETOBJECTS_ARRAY_PTR 0x02C8022C
 #define LOL_MEM_NETOBJECTS_MAX_PTR_INT 0x02C81220
-#define LOL_MEM_NETOBJECTS_MAX 2500 //anyway...
+#define LOL_MEM_NETOBJECTS_MAX 10000 //anyway...
 
 /************************************************************************/
 /*    NET-OBJECTS MEMORY PATTERNS                                       */
@@ -91,7 +100,6 @@ int TryCopyMem(void *dest, const void *src, size_t count);
 #define LOL_MEM_START_TIME_PTR 0x01BA6088
 #define LOL_MEM_CURRENT_TIME_STRUCT_PTR 0x00B46858
 #define LOL_MEM_CURRENT_TIME_OFFSET 0x00000008
-#define LOL_MEM_GET_GAMETIME() ((ingameClockNow && ingameClockStart)? ((int)floor(*ingameClockNow - *ingameClockStart)) : 0)
 
 #define LOL_MEM_PLAYER_LEVEL_PTR 0x00B46974
 #define LOL_MEM_PLAYER_LEVEL_OFFSET1 0x000000DC
@@ -105,4 +113,10 @@ int TryCopyMem(void *dest, const void *src, size_t count);
 
 #define INI_NAME_WITH_PREFIX(prefix, postfix) ((wstring(##prefix) + ##postfix).c_str())
 
-
+/************************************************************************/
+/*     COMPILE FLAGS FOR LOGGING AND TESTING                            */
+/************************************************************************/
+//See log.h
+//#define JT_ODDEBUG
+//#define JT_EFDEBUG
+#define JT_DEBUG

@@ -28,7 +28,7 @@
 //EF stands for Each Frame. This mode needs for debugging of the some things, like render cycle. WARN! You need to use Debug with this flag
 //#define JT_EFDEBUG
 //Just debug...
-#define JT_DEBUG
+//#define JT_DEBUG
 
 #define _LOG_MSG_MF(fileName, pType, objStr, childObjStr, msg) __log.WriteStr(##pType, __WFUNCTION__, ##fileName, __LINE__, ##objStr, ##childObjStr, ##msg)
 #define _LOG_MSG_PTR_MF(fileName, pType, objStr, childObjStr, msg, ptr) __log.WritePtr(##pType, __WFUNCTION__, ##fileName, __LINE__, ##objStr, ##childObjStr, ##msg, ##ptr)

@@ -13,7 +13,7 @@ class SmiteIgniteIndicator : public JungleTime::IRenderableObject
 {
 public:
 	SmiteIgniteIndicator(LPCWSTR innerName, int flat, int perlvl)
-		: innerName(innerName), flat(flat), perlvl(perlvl), font(0), resourcesAreReady(false){
+		: innerName(innerName), flat(flat), perlvl(perlvl), font(0){
 		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"loading...");
 
 		/************************************************************************/
@@ -52,20 +52,10 @@ public:
 		//Release resources only if application loop is alive, we dont need to freeze application in the process list
 		if(font != NULL && !IS_DX_LOOP_DEAD)
 			font->Release();
-		resourcesAreReady = true;
 		LOG_VERBOSE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"unloaded");	
 	}
 
 	void Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs){
-		if(!resourcesAreReady){
-			LOG_WARNING_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"resources was not ready in the real application way, trying to create it by myself...");
-			PrepareResources(pDevice);
-			if(!resourcesAreReady){
-				LOG_ERROR_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"but i cant create resources, waiting 500 ms");
-				Sleep(500);
-				return;
-			}
-		}
 		LOG_DEBUG_EF_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"drawing");
 
 		if(!playerLevel && frameNum%30 == 0){
@@ -76,28 +66,37 @@ public:
 			if(!playerLevel)
 				LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"pointers still not available");
 			#endif
+			if(!playerLevel && curTimeSecs > 10)
+				LOG_ERROR_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"player level pointer is broken!");
 		}
 
 		//If we still cannot find needed pointers - we have nothing to render...
 		if(!playerLevel){
-			LOG_DEBUG_EF_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"pointers still not available");
+			LOG_WARNING_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"pointers still not available");
+			return;
+		}
+		
+		int errCode = 0, level = 0;
+		if((errCode = TryDirectReadMem<int>(&level, playerLevel)) != (int)&level){
+			LOG_ERROR_CODE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"cannot read player level memory, error code: ", errCode);
 			return;
 		}
 		
 		wchar_t istr[30];
-		_itow_s(flat+perlvl*(*playerLevel), istr, 10);
+		_itow_s(flat+perlvl*(level), istr, 10);
 		if(showLabel)
 			font->DrawText(NULL, labelName, -1, &labelCoords, DT_NOCLIP, labelFontColor);
 		font->DrawText(NULL, istr, -1, &indiCoords, DT_NOCLIP, indiFontColor);
-		resourcesAreReady = false;
 		LOG_DEBUG_EF_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"draw is done");
 	}
 	
-	void Init(PDIRECT3DDEVICE9 pDevice){
+	bool Init(PDIRECT3DDEVICE9 pDevice){
+		bool res = true;
 		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"preparing...");
 		//Find needed pointers
-		TryToInitPointers();
+		/*res = res && */TryToInitPointers();
 		LOG_VERBOSE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"is ready");
+		return res;
 	}
 
 	void OnLostDevice(){
@@ -110,33 +109,66 @@ public:
 			font->OnResetDevice();
 	}
 
-	void PrepareResources(PDIRECT3DDEVICE9 pDevice){
+	bool PrepareResources(PDIRECT3DDEVICE9 pDevice){
 		//Create DirectX objects
 		HRESULT res = D3DXCreateFont(pDevice, indiFontSize, 0, indiFontWeight, 1, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, indiFontName, &font);
 		if(res != S_OK){
 			LOG_ERROR_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"cannot create resources");
-			return;
+			return false;
 		}
-		resourcesAreReady = true;
 		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"resources are ready");
+		return true;
 	}
 
 private:
 	//Get pointers we can grab only in runtime, after some special in-game events
-	void TryToInitPointers(){
+	bool TryToInitPointers(){
 		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"trying to find needed pointers");
 		
-		DWORD res = *((DWORD *)LOL_MEM_PLAYER_LEVEL_PTR);
-		if(!res)
-			return;
-		res += LOL_MEM_PLAYER_LEVEL_OFFSET1;
-		res = *((DWORD *)res);
-		if(!res)
-			return;
-		res += LOL_MEM_PLAYER_LEVEL_OFFSET2;
-		playerLevel = (int*)res;
-		
-		LOG_DEBUG_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"all pointers are found");
+		int errCode = 0;
+		DWORD tmp = NULL, tmp2 = NULL;//for teh logging
+
+		//LOL_MEM_PLAYER_LEVEL_PTR->
+		if((errCode = TryCopyMem(&tmp, (void*)LOL_MEM_PLAYER_LEVEL_PTR, sizeof(void*))) != (int)&tmp){
+			LOG_ERROR_CODE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"cannot read player struct memory, error code: ", errCode);
+			return false;
+		}
+		//==NULL
+		if(tmp == 0x0){
+			LOG_ERROR_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"cannot read player struct memory: struct pointer is null");
+			return false;
+		}
+
+		//LOL_MEM_PLAYER_LEVEL_PTR->x+LOL_MEM_PLAYER_LEVEL_OFFSET1
+		if((errCode = TryCopyMem(&tmp2, (void*)(tmp+LOL_MEM_PLAYER_LEVEL_OFFSET1), sizeof(void*))) != (int)&tmp2){
+			LOG_ERROR_CODE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"cannot read player struct with OFFSET1 memory, error code: ", errCode);
+			return false;
+		}
+		//==NULL
+		if(tmp2 == 0x0){
+			LOG_ERROR_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"cannot read player struct with OFFSET1 memory: struct pointer is null");
+			return false;
+		}
+
+		//LOL_MEM_PLAYER_LEVEL_PTR->tmp+LOL_MEM_PLAYER_LEVEL_OFFSET1->tmp2+LOL_MEM_PLAYER_LEVEL_OFFSET2
+		playerLevel = (int*)(tmp2+LOL_MEM_PLAYER_LEVEL_OFFSET2);
+
+		wchar_t buf[2048];
+		swprintf(buf, 2048, L"Current level address: %p->%p+%p->%p+%p->%p = int", LOL_MEM_PLAYER_LEVEL_PTR, tmp, LOL_MEM_PLAYER_LEVEL_OFFSET1, tmp2, LOL_MEM_PLAYER_LEVEL_OFFSET2, playerLevel);
+		LOG_VERBOSE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, buf);
+
+		//Check value
+		int tmp3 = 0;
+		if((errCode = TryCopyMem(&tmp3, (void*)playerLevel, sizeof(int))) != (int)&tmp3){
+			LOG_ERROR_CODE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"cannot check player level memory, error code: ", errCode);
+			return false;
+		}
+
+		if(tmp3 < 0 || tmp3 > 18)
+			LOG_ERROR_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"PlayerLevel pointer is broken! <0 or >18");
+
+		LOG_VERBOSE_MF(L"SmiteIgniteIndicator.h", L"ObjectIndicators", innerName, L"all pointers are found");
+		return true;
 	}
 
 	//In-game pointers
@@ -167,7 +199,6 @@ private:
 
 	//Overlay fonts
 	LPD3DXFONT font;
-	bool resourcesAreReady;
 };
 
 //Init static variables.

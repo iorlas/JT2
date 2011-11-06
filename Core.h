@@ -14,13 +14,13 @@ public:
 
 	static Core* singleton;
 private:
-	void OnDXFirstFrame(LPDIRECT3DDEVICE9 pDevice);
-	void OnDXInitiated(void);
+	bool OnDXFirstFrame(LPDIRECT3DDEVICE9 pDevice);
+	bool OnDXInitiated(void);
 	void OnDXEndScene(LPDIRECT3DDEVICE9 pDevice);
 	void OnDXResetDevice(LPDIRECT3DDEVICE9 pDevice);
 	void OnDXLostDevice();
 
-	void InitTimePointers();
+	bool InitTimePointers();
 
 	vector<IRenderableObject*> renderObjects;
 

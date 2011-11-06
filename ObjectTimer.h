@@ -17,15 +17,15 @@ public:
 	virtual ~ObjectTimer(void);
 
 	void Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs);
-	void Init(PDIRECT3DDEVICE9 pDevice);
+	bool Init(PDIRECT3DDEVICE9 pDevice);
 
 	//DX resources managment
-	void PrepareResources(PDIRECT3DDEVICE9 pDevice);
+	bool PrepareResources(PDIRECT3DDEVICE9 pDevice);
 	void OnLostDevice();
 	void OnResetDevice(PDIRECT3DDEVICE9 pDevice);
 
 	//Get pointers we can grab only in runtime, after some special in-game events
-	void TryToInitNetobjectPointers();
+	bool TryToInitNetobjectPointers();
 
 	//In-game pointers
 	int objectMemoryPattern;
@@ -69,7 +69,6 @@ public:
 
 	//Overlay fonts
 	LPD3DXFONT timerFont;
-	bool resourcesAreReady;
 };
 
 }

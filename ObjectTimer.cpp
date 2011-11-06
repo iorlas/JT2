@@ -5,7 +5,7 @@ namespace JungleTime{
 ObjectTimer::ObjectTimer(LPCWSTR innerName, int cooldown, int spawnAt, int objectMemoryPattern)
 	: innerName(innerName), cooldown(cooldown), spawnAt(spawnAt), objectMemoryPattern(objectMemoryPattern),
 	killedAt(0), isAlivePtr(0), isAliveBefore(false),
-	timerFont(0), resourcesAreReady(false){
+	timerFont(0){
 	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"loading...");
 
 	/************************************************************************/
@@ -49,16 +49,6 @@ ObjectTimer::ObjectTimer(LPCWSTR innerName, int cooldown, int spawnAt, int objec
 }
 
 void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs){
-	if(!resourcesAreReady){
-		LOG_WARNING_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"resources was not ready in the real application way, trying to create it by myself...");
-		PrepareResources(pDevice);
-		if(!resourcesAreReady){
-			LOG_WARNING_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"but i cant create resources, waiting 500 ms");
-			Sleep(500);
-			return;
-		}
-	}
-
 	LOG_DEBUG_EF_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"drawing");
 
 	//Every 10 frames we'll try to find net-objects
@@ -114,21 +104,23 @@ void ObjectTimer::Render(PDIRECT3DDEVICE9 pDevice, int frameNum, int curTimeSecs
 	LOG_DEBUG_EF_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"draw is done");
 }
 
-void ObjectTimer::Init(PDIRECT3DDEVICE9 pDevice){
+bool ObjectTimer::Init(PDIRECT3DDEVICE9 pDevice){
+	bool res = true;
 	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"preparing...");
 	//Gather pointers to needed related information from the game
-	TryToInitNetobjectPointers();
+	/*res = res && */TryToInitNetobjectPointers();
 	LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"is ready");
+	return res;
 }
-void ObjectTimer::PrepareResources(PDIRECT3DDEVICE9 pDevice){
+bool ObjectTimer::PrepareResources(PDIRECT3DDEVICE9 pDevice){
 	//Create DirectX objects
 	HRESULT res = D3DXCreateFont(pDevice, timerFontSize, 0, timerFontWeight, 1, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, timerFontName, &timerFont);
 	if(res != S_OK){
 		LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"cannot create resources");
-		return;
+		return false;
 	}
-	resourcesAreReady = true;
 	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"resources are ready");
+	return true;
 }
 
 void ObjectTimer::OnLostDevice(){
@@ -141,10 +133,7 @@ void ObjectTimer::OnResetDevice(PDIRECT3DDEVICE9 pDevice){
 		timerFont->OnResetDevice();
 }
 
-void ObjectTimer::TryToInitNetobjectPointers(){
-	if(isAlivePtr)
-		return;
-	
+bool ObjectTimer::TryToInitNetobjectPointers(){
 	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"trying to find needed pointers");
 
 	DWORD arr = *((DWORD*)(LOL_MEM_NETOBJECTS_ARRAY_PTR));
@@ -173,10 +162,12 @@ void ObjectTimer::TryToInitNetobjectPointers(){
 				continue;
 			}
 			LOG_VERBOSE_PTR_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"network object verified", obj);
+			return true;
 		}
 	}
 
-	LOG_DEBUG_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"all pointers are found");
+	LOG_DEBUG_EF_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"pointers not found!");
+	return false;
 }
 
 ObjectTimer::~ObjectTimer(void){
@@ -189,7 +180,6 @@ ObjectTimer::~ObjectTimer(void){
 	//Release resources only if application loop is alive, we dont need to freeze application in the process list
 	if(timerFont != NULL && !IS_DX_LOOP_DEAD)
 		timerFont->Release();
-	resourcesAreReady = false;
 	LOG_VERBOSE_MF(L"ObjectTimer.cpp", L"ObjectTimers", innerName, L"unloaded");	
 }
 

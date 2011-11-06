@@ -22,17 +22,18 @@ public:
 	void SetStatusIsRender(bool isRender);
 
 	//Temporary indicators for the EndScene
-	bool isInitiated;
-	bool isFirstFrame;
-	bool isFirstInitiatedFrame;
-
+	bool isInitiated; //for a first initiation, from dll attach thread
+	bool isFirstFrame; //for a first hooked EndScene, to show a message "loading..."
+	bool isFirstInitiatedFrame; //for a first frame, after all initiation of the Core
+	bool isReadyToRender; //for a usual render
+	
 	static DX9Manager* singleton;
 private:
 
 	//On the first frame we intercept
-	virtual void OnDXFirstFrame(LPDIRECT3DDEVICE9 pDevice);
+	virtual bool OnDXFirstFrame(LPDIRECT3DDEVICE9 pDevice);
 	//On hooking done
-	virtual void OnDXInitiated(void);
+	virtual bool OnDXInitiated(void);
 	//On each frame
 	virtual void OnDXEndScene(LPDIRECT3DDEVICE9 pDevice);
 	//On reset
